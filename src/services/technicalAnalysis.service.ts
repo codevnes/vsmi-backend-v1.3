@@ -58,11 +58,6 @@ export class TechnicalAnalysisService {
     return prisma.technicalAnalysis.create({
       data: {
         symbol: data.symbol,
-        stock: {
-          connect: {
-            symbol: data.symbol,
-          },
-        },
         close: data.close,
         
         rsi14: data.rsi14,
@@ -137,11 +132,6 @@ export class TechnicalAnalysisService {
       where: { symbol },
       create: {
         symbol,
-        stock: {
-          connect: {
-            symbol,
-          },
-        },
         close: data.close,
         
         rsi14: data.rsi14,

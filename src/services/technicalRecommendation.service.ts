@@ -92,35 +92,37 @@ export class TechnicalRecommendationService {
     return prisma.technicalRecommendation.create({
       data: {
         symbol: data.symbol,
-        date: new Date(data.date),
-        stock: {
-          connect: {
-            symbol: data.symbol,
-          },
-        },
+        date: data.date,
         open: data.open,
         high: data.high,
         low: data.low,
         close: data.close,
         volume: data.volume,
+        
         rsi14: data.rsi14,
         macdLine: data.macdLine,
         macdSignal: data.macdSignal,
         macdHistogram: data.macdHistogram,
+        
         stochasticK: data.stochasticK,
         stochasticD: data.stochasticD,
+        
         williamsR: data.williamsR,
         adx14: data.adx14,
         plusDi14: data.plusDi14,
         minusDi14: data.minusDi14,
+        
         momentum10: data.momentum10,
         ultimateOscillator: data.ultimateOscillator,
         cci20: data.cci20,
+        
         stochRsiK: data.stochRsiK,
         stochRsiD: data.stochRsiD,
+        
         awesomeOscillator: data.awesomeOscillator,
         bullPower13: data.bullPower13,
         bearPower13: data.bearPower13,
+        
         sma10: data.sma10,
         ema10: data.ema10,
         sma20: data.sma20,
@@ -133,6 +135,7 @@ export class TechnicalRecommendationService {
         ema100: data.ema100,
         sma200: data.sma200,
         ema200: data.ema200,
+        
         hma9: data.hma9,
         ichimokuBaseLine26: data.ichimokuBaseLine26,
       },
@@ -159,47 +162,47 @@ export class TechnicalRecommendationService {
     });
   }
 
-  async upsert(symbol: string, date: string, data: Partial<TechnicalRecommendationDto>) {
-    const formattedDate = new Date(date);
-    
+  async upsert(symbol: string, date: Date, data: Partial<TechnicalRecommendationDto>) {
     return prisma.technicalRecommendation.upsert({
       where: {
         date_symbol: {
-          date: formattedDate,
-          symbol,
-        },
+          date,
+          symbol
+        }
       },
       create: {
         symbol,
-        date: formattedDate,
-        stock: {
-          connect: {
-            symbol,
-          },
-        },
+        date,
         open: data.open,
         high: data.high,
         low: data.low,
         close: data.close,
         volume: data.volume,
+        
         rsi14: data.rsi14,
         macdLine: data.macdLine,
         macdSignal: data.macdSignal,
         macdHistogram: data.macdHistogram,
+        
         stochasticK: data.stochasticK,
         stochasticD: data.stochasticD,
+        
         williamsR: data.williamsR,
         adx14: data.adx14,
         plusDi14: data.plusDi14,
         minusDi14: data.minusDi14,
+        
         momentum10: data.momentum10,
         ultimateOscillator: data.ultimateOscillator,
         cci20: data.cci20,
+        
         stochRsiK: data.stochRsiK,
         stochRsiD: data.stochRsiD,
+        
         awesomeOscillator: data.awesomeOscillator,
         bullPower13: data.bullPower13,
         bearPower13: data.bearPower13,
+        
         sma10: data.sma10,
         ema10: data.ema10,
         sma20: data.sma20,
@@ -212,6 +215,7 @@ export class TechnicalRecommendationService {
         ema100: data.ema100,
         sma200: data.sma200,
         ema200: data.ema200,
+        
         hma9: data.hma9,
         ichimokuBaseLine26: data.ichimokuBaseLine26,
       },
@@ -222,16 +226,14 @@ export class TechnicalRecommendationService {
     });
   }
 
-  async delete(symbol: string, date: string) {
-    const formattedDate = new Date(date);
-    
+  async delete(symbol: string, date: Date) {
     return prisma.technicalRecommendation.delete({
       where: {
-        symbol_date: {
-          symbol,
-          date: formattedDate,
-        },
-      },
+        date_symbol: {
+          date,
+          symbol
+        }
+      }
     });
   }
 } 

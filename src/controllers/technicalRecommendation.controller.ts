@@ -205,7 +205,14 @@ export const upsertTechnicalRecommendation = async (req: AuthRequest, res: Respo
       });
     }
     
-    const recommendation = await technicalRecommendationService.upsert(symbol, date, data);
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return res.status(400).json({
+        message: TECHNICAL_RECOMMENDATION_MESSAGES.INVALID_DATE_FORMAT
+      });
+    }
+    
+    const recommendation = await technicalRecommendationService.upsert(symbol, dateObj, data);
     
     return res.status(200).json({
       message: TECHNICAL_RECOMMENDATION_MESSAGES.UPSERT_RECOMMENDATION_SUCCESS,
@@ -238,6 +245,13 @@ export const deleteTechnicalRecommendation = async (req: AuthRequest, res: Respo
       });
     }
     
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return res.status(400).json({
+        message: TECHNICAL_RECOMMENDATION_MESSAGES.INVALID_DATE_FORMAT
+      });
+    }
+    
     // Check if recommendation exists
     const existing = await technicalRecommendationService.getBySymbolAndDate(symbol, date);
     if (!existing) {
@@ -246,7 +260,7 @@ export const deleteTechnicalRecommendation = async (req: AuthRequest, res: Respo
       });
     }
     
-    await technicalRecommendationService.delete(symbol, date);
+    await technicalRecommendationService.delete(symbol, dateObj);
     
     return res.status(200).json({
       message: TECHNICAL_RECOMMENDATION_MESSAGES.DELETE_RECOMMENDATION_SUCCESS

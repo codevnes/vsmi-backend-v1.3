@@ -27,3 +27,4 @@ __exportStar(require("./stockProfile.controller"), exports);
 __exportStar(require("./technicalAnalysis.controller"), exports);
 __exportStar(require("./selectedStocks.controller"), exports);
 __exportStar(require("./technicalRecommendation.controller"), exports);
+__exportStar(require("./chatGptAnalysis.controller"), exports);

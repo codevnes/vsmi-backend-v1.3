@@ -186,7 +186,13 @@ const upsertTechnicalRecommendation = async (req, res) => {
                 message: technicalRecommendation_constants_1.TECHNICAL_RECOMMENDATION_MESSAGES.DATE_REQUIRED
             });
         }
-        const recommendation = await services_1.technicalRecommendationService.upsert(symbol, date, data);
+        const dateObj = new Date(date);
+        if (isNaN(dateObj.getTime())) {
+            return res.status(400).json({
+                message: technicalRecommendation_constants_1.TECHNICAL_RECOMMENDATION_MESSAGES.INVALID_DATE_FORMAT
+            });
+        }
+        const recommendation = await services_1.technicalRecommendationService.upsert(symbol, dateObj, data);
         return res.status(200).json({
             message: technicalRecommendation_constants_1.TECHNICAL_RECOMMENDATION_MESSAGES.UPSERT_RECOMMENDATION_SUCCESS,
             data: recommendation,
@@ -216,6 +222,12 @@ const deleteTechnicalRecommendation = async (req, res) => {
                 message: technicalRecommendation_constants_1.TECHNICAL_RECOMMENDATION_MESSAGES.DATE_REQUIRED
             });
         }
+        const dateObj = new Date(date);
+        if (isNaN(dateObj.getTime())) {
+            return res.status(400).json({
+                message: technicalRecommendation_constants_1.TECHNICAL_RECOMMENDATION_MESSAGES.INVALID_DATE_FORMAT
+            });
+        }
         // Check if recommendation exists
         const existing = await services_1.technicalRecommendationService.getBySymbolAndDate(symbol, date);
         if (!existing) {
@@ -223,7 +235,7 @@ const deleteTechnicalRecommendation = async (req, res) => {
                 message: technicalRecommendation_constants_1.TECHNICAL_RECOMMENDATION_MESSAGES.RECOMMENDATION_NOT_FOUND_FOR_SYMBOL_AND_DATE
             });
         }
-        await services_1.technicalRecommendationService.delete(symbol, date);
+        await services_1.technicalRecommendationService.delete(symbol, dateObj);
         return res.status(200).json({
             message: technicalRecommendation_constants_1.TECHNICAL_RECOMMENDATION_MESSAGES.DELETE_RECOMMENDATION_SUCCESS
         });

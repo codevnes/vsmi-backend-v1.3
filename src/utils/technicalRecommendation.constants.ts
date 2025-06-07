@@ -15,5 +15,6 @@ export const TECHNICAL_RECOMMENDATION_MESSAGES = {
   DELETE_RECOMMENDATION_ERROR: 'Xóa thông tin khuyến nghị kỹ thuật thất bại',
   SYMBOL_REQUIRED: 'Mã cổ phiếu là bắt buộc',
   DATE_REQUIRED: 'Ngày khuyến nghị là bắt buộc',
+  INVALID_DATE_FORMAT: 'Định dạng ngày không hợp lệ',
   RECOMMENDATION_ALREADY_EXISTS: 'Thông tin khuyến nghị kỹ thuật đã tồn tại cho mã cổ phiếu và ngày đã chọn'
 }; 

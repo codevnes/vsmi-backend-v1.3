@@ -17,6 +17,7 @@ const selectedStocks_1 = __importDefault(require("./selectedStocks"));
 const fscore_routes_1 = __importDefault(require("./fscore.routes"));
 const technicalAnalysis_1 = __importDefault(require("./technicalAnalysis"));
 const technicalRecommendation_1 = __importDefault(require("./technicalRecommendation"));
+const chatGptAnalysis_1 = __importDefault(require("./chatGptAnalysis"));
 const router = (0, express_1.Router)();
 // Combine all routes
 router.use('/auth', auth_1.default);
@@ -32,4 +33,5 @@ router.use('/selected-stocks', selectedStocks_1.default);
 router.use('/fscores', fscore_routes_1.default);
 router.use('/technical-analyses', technicalAnalysis_1.default);
 router.use('/technical-recommendations', technicalRecommendation_1.default);
+router.use('/chatgpt-analyses', chatGptAnalysis_1.default);
 exports.default = router;

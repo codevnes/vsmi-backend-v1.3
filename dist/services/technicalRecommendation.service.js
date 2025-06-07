@@ -74,12 +74,7 @@ class TechnicalRecommendationService {
         return app_1.prisma.technicalRecommendation.create({
             data: {
                 symbol: data.symbol,
-                date: new Date(data.date),
-                stock: {
-                    connect: {
-                        symbol: data.symbol,
-                    },
-                },
+                date: data.date,
                 open: data.open,
                 high: data.high,
                 low: data.low,
@@ -139,22 +134,16 @@ class TechnicalRecommendationService {
         });
     }
     async upsert(symbol, date, data) {
-        const formattedDate = new Date(date);
         return app_1.prisma.technicalRecommendation.upsert({
             where: {
                 date_symbol: {
-                    date: formattedDate,
-                    symbol,
-                },
+                    date,
+                    symbol
+                }
             },
             create: {
                 symbol,
-                date: formattedDate,
-                stock: {
-                    connect: {
-                        symbol,
-                    },
-                },
+                date,
                 open: data.open,
                 high: data.high,
                 low: data.low,
@@ -200,14 +189,13 @@ class TechnicalRecommendationService {
         });
     }
     async delete(symbol, date) {
-        const formattedDate = new Date(date);
         return app_1.prisma.technicalRecommendation.delete({
             where: {
-                symbol_date: {
-                    symbol,
-                    date: formattedDate,
-                },
-            },
+                date_symbol: {
+                    date,
+                    symbol
+                }
+            }
         });
     }
 }

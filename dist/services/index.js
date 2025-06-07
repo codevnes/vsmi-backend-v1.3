@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TechnicalRecommendationService = exports.TechnicalAnalysisService = exports.StockProfileService = exports.FinancialMetricsService = exports.StockPriceService = exports.StockService = exports.PostService = exports.ImageService = exports.CategoryService = exports.UserService = exports.AuthService = exports.technicalRecommendationService = exports.technicalAnalysisService = exports.stockProfileService = exports.fscoreService = exports.financialMetricsService = exports.stockPriceService = exports.stockService = exports.postService = exports.imageService = exports.categoryService = exports.userService = exports.authService = void 0;
+exports.OpenAIService = exports.TechnicalRecommendationService = exports.TechnicalAnalysisService = exports.StockProfileService = exports.FinancialMetricsService = exports.StockPriceService = exports.StockService = exports.PostService = exports.ImageService = exports.CategoryService = exports.UserService = exports.AuthService = exports.openAIService = exports.technicalRecommendationService = exports.technicalAnalysisService = exports.stockProfileService = exports.fscoreService = exports.financialMetricsService = exports.stockPriceService = exports.stockService = exports.postService = exports.imageService = exports.categoryService = exports.userService = exports.authService = void 0;
 const auth_service_1 = require("./auth.service");
 Object.defineProperty(exports, "AuthService", { enumerable: true, get: function () { return auth_service_1.AuthService; } });
 const user_service_1 = require("./user.service");
@@ -24,6 +24,8 @@ const technicalAnalysis_service_1 = require("./technicalAnalysis.service");
 Object.defineProperty(exports, "TechnicalAnalysisService", { enumerable: true, get: function () { return technicalAnalysis_service_1.TechnicalAnalysisService; } });
 const technicalRecommendation_service_1 = require("./technicalRecommendation.service");
 Object.defineProperty(exports, "TechnicalRecommendationService", { enumerable: true, get: function () { return technicalRecommendation_service_1.TechnicalRecommendationService; } });
+const openai_service_1 = require("./openai.service");
+Object.defineProperty(exports, "OpenAIService", { enumerable: true, get: function () { return openai_service_1.OpenAIService; } });
 // Export instances
 exports.authService = new auth_service_1.AuthService();
 exports.userService = new user_service_1.UserService();
@@ -37,3 +39,4 @@ exports.fscoreService = new fscore_service_1.FScoreService();
 exports.stockProfileService = new stockProfile_service_1.StockProfileService();
 exports.technicalAnalysisService = new technicalAnalysis_service_1.TechnicalAnalysisService();
 exports.technicalRecommendationService = new technicalRecommendation_service_1.TechnicalRecommendationService();
+exports.openAIService = new openai_service_1.OpenAIService();

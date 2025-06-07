@@ -7,20 +7,21 @@ import {
   updateStockPrice,
   deleteStockPrice,
   bulkCreateStockPrices
-} from '../controllers';
+} from '../controllers/stockPrice.controller';
 import { verifyToken, isAdmin } from '../middlewares';
+import { AsyncRequestHandler, AsyncAuthRequestHandler } from '../types/express';
 
 const router = Router();
 
 // Public routes
-router.get('/symbol/:symbol', getStockPrices);
-router.get('/symbol/:symbol/date/:date', getStockPriceByDate);
-router.get('/symbol/:symbol/latest', getLatestStockPrice);
+router.get('/symbol/:symbol', getStockPrices as AsyncRequestHandler);
+router.get('/symbol/:symbol/date/:date', getStockPriceByDate as AsyncRequestHandler);
+router.get('/symbol/:symbol/latest', getLatestStockPrice as AsyncRequestHandler);
 
 // Protected routes - Admin only
-router.post('/', verifyToken, isAdmin, createStockPrice);
-router.post('/bulk', verifyToken, isAdmin, bulkCreateStockPrices);
-router.put('/symbol/:symbol/date/:date', verifyToken, isAdmin, updateStockPrice);
-router.delete('/symbol/:symbol/date/:date', verifyToken, isAdmin, deleteStockPrice);
+router.post('/', verifyToken, isAdmin, createStockPrice as AsyncAuthRequestHandler);
+router.post('/bulk', verifyToken, isAdmin, bulkCreateStockPrices as AsyncAuthRequestHandler);
+router.put('/symbol/:symbol/date/:date', verifyToken, isAdmin, updateStockPrice as AsyncAuthRequestHandler);
+router.delete('/symbol/:symbol/date/:date', verifyToken, isAdmin, deleteStockPrice as AsyncAuthRequestHandler);
 
 export default router; 
