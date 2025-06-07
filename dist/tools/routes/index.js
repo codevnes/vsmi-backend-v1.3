@@ -1,0 +1,31 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var express_1 = require("express");
+var auth_1 = __importDefault(require("./auth"));
+var user_1 = __importDefault(require("./user"));
+var category_1 = __importDefault(require("./category"));
+var image_1 = __importDefault(require("./image"));
+var post_1 = __importDefault(require("./post"));
+var stock_1 = __importDefault(require("./stock"));
+var stockPrice_1 = __importDefault(require("./stockPrice"));
+var financialMetrics_1 = __importDefault(require("./financialMetrics"));
+var stockProfile_1 = __importDefault(require("./stockProfile"));
+var selectedStocks_1 = __importDefault(require("./selectedStocks"));
+var fscore_routes_1 = __importDefault(require("./fscore.routes"));
+var router = (0, express_1.Router)();
+// Combine all routes
+router.use('/auth', auth_1.default);
+router.use('/users', user_1.default);
+router.use('/categories', category_1.default);
+router.use('/images', image_1.default);
+router.use('/posts', post_1.default);
+router.use('/stocks', stock_1.default);
+router.use('/stock-prices', stockPrice_1.default);
+router.use('/financial-metrics', financialMetrics_1.default);
+router.use('/stock-profiles', stockProfile_1.default);
+router.use('/selected-stocks', selectedStocks_1.default);
+router.use('/fscores', fscore_routes_1.default);
+exports.default = router;

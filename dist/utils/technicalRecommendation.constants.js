@@ -1,0 +1,22 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TECHNICAL_RECOMMENDATION_MESSAGES = void 0;
+exports.TECHNICAL_RECOMMENDATION_MESSAGES = {
+    GET_RECOMMENDATIONS_SUCCESS: 'Lấy danh sách khuyến nghị kỹ thuật thành công',
+    GET_RECOMMENDATIONS_ERROR: 'Lấy danh sách khuyến nghị kỹ thuật thất bại',
+    GET_RECOMMENDATION_SUCCESS: 'Lấy thông tin khuyến nghị kỹ thuật thành công',
+    GET_RECOMMENDATION_ERROR: 'Lấy thông tin khuyến nghị kỹ thuật thất bại',
+    RECOMMENDATION_NOT_FOUND: 'Không tìm thấy thông tin khuyến nghị kỹ thuật',
+    RECOMMENDATION_NOT_FOUND_FOR_SYMBOL_AND_DATE: 'Không tìm thấy thông tin khuyến nghị kỹ thuật cho mã cổ phiếu này vào ngày đã chọn',
+    CREATE_RECOMMENDATION_SUCCESS: 'Tạo thông tin khuyến nghị kỹ thuật thành công',
+    CREATE_RECOMMENDATION_ERROR: 'Tạo thông tin khuyến nghị kỹ thuật thất bại',
+    UPDATE_RECOMMENDATION_SUCCESS: 'Cập nhật thông tin khuyến nghị kỹ thuật thành công',
+    UPDATE_RECOMMENDATION_ERROR: 'Cập nhật thông tin khuyến nghị kỹ thuật thất bại',
+    UPSERT_RECOMMENDATION_SUCCESS: 'Thêm mới hoặc cập nhật thông tin khuyến nghị kỹ thuật thành công',
+    UPSERT_RECOMMENDATION_ERROR: 'Thêm mới hoặc cập nhật thông tin khuyến nghị kỹ thuật thất bại',
+    DELETE_RECOMMENDATION_SUCCESS: 'Xóa thông tin khuyến nghị kỹ thuật thành công',
+    DELETE_RECOMMENDATION_ERROR: 'Xóa thông tin khuyến nghị kỹ thuật thất bại',
+    SYMBOL_REQUIRED: 'Mã cổ phiếu là bắt buộc',
+    DATE_REQUIRED: 'Ngày khuyến nghị là bắt buộc',
+    RECOMMENDATION_ALREADY_EXISTS: 'Thông tin khuyến nghị kỹ thuật đã tồn tại cho mã cổ phiếu và ngày đã chọn'
+};

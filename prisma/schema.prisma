@@ -1,0 +1,582 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String         @id @default(uuid()) @db.Uuid
+  email                String         @unique @db.VarChar(100)
+  fullName             String         @db.VarChar(100)
+  phone                String?        @db.VarChar(20)
+  password             String         @db.VarChar(255)
+  role                 Role           @default(USER)
+  thumbnailId          Int?
+  verified             Boolean        @default(false)
+  deletedAt            DateTime?      @db.Timestamptz(3)
+  createdAt            DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime       @updatedAt @db.Timestamptz(3)
+  posts                Post[]
+  createdSubscriptions Subscription[] @relation("CreatedBy")
+  updatedSubscriptions Subscription[] @relation("UpdatedBy")
+  subscriptions        Subscription[]
+  createdTransactions  Transaction[]  @relation("TransactionCreatedBy")
+  updatedTransactions  Transaction[]  @relation("TransactionUpdatedBy")
+  thumbnail            Image?         @relation(fields: [thumbnailId], references: [id])
+
+  @@index([email])
+  @@index([role])
+}
+
+model Currency {
+  code      String          @id @db.VarChar(10)
+  name      String          @db.VarChar(255)
+  createdAt DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime        @updatedAt @db.Timestamptz(3)
+  prices    CurrencyPrice[]
+}
+
+model Stock {
+  id                       String                    @id @default(uuid()) @db.Uuid
+  symbol                   String                    @unique @db.VarChar(10)
+  name                     String                    @db.VarChar(255)
+  exchange                 String?                   @db.VarChar(100)
+  industry                 String?                   @db.VarChar(100)
+  description              String?
+  createdAt                DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime                  @updatedAt @db.Timestamptz(3)
+  fscore                   FScore?
+  financialMetrics         FinancialMetrics[]
+  posts                    Post[]
+  selectedStocks           SelectedStocks[]
+  stockPrices              StockPrice[]
+  profile                  StockProfile?
+  subscriptionPlanSymbols  SubscriptionPlanSymbol[]
+  technicalAnalysis        TechnicalAnalysis?
+  technicalRecommendations TechnicalRecommendation[]
+  transactions             Transaction[]
+  watchlists               Watchlist[]
+  chatGptAnalyses          ChatGptAnalysis[]
+
+  @@index([symbol])
+  @@index([industry])
+  @@index([exchange])
+}
+
+model Category {
+  id          String     @id @default(uuid()) @db.Uuid
+  title       String     @db.VarChar(255)
+  slug        String     @unique @db.VarChar(255)
+  thumbnailId Int?
+  description String?
+  parentId    String?    @db.Uuid
+  deletedAt   DateTime?  @db.Timestamptz(3)
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
+  parent      Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToCategory")
+  thumbnail   Image?     @relation(fields: [thumbnailId], references: [id])
+  posts       Post[]
+
+  @@index([parentId])
+  @@index([slug])
+}
+
+model StockPrice {
+  id        String   @id @default(uuid()) @db.Uuid
+  symbol    String   @db.VarChar(10)
+  date      DateTime @db.Date
+  open      Decimal  @db.Decimal(10, 4)
+  high      Decimal  @db.Decimal(10, 4)
+  low       Decimal  @db.Decimal(10, 4)
+  close     Decimal  @db.Decimal(10, 4)
+  volume    BigInt?
+  trendQ    Decimal? @db.Decimal(10, 4)
+  fq        Decimal? @db.Decimal(10, 4)
+  bandDown  Decimal? @db.Decimal(10, 4)
+  bandUp    Decimal? @db.Decimal(10, 4)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  stock     Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date])
+  @@index([date])
+  @@index([symbol])
+}
+
+model CurrencyPrice {
+  id           String   @id @default(uuid()) @db.Uuid
+  currencyCode String   @db.VarChar(10)
+  date         DateTime @db.Date
+  open         Decimal  @db.Decimal(10, 4)
+  high         Decimal  @db.Decimal(10, 4)
+  low          Decimal  @db.Decimal(10, 4)
+  close        Decimal  @db.Decimal(10, 4)
+  trendQ       Decimal? @db.Decimal(10, 4)
+  fq           Decimal? @db.Decimal(10, 4)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+  currency     Currency @relation(fields: [currencyCode], references: [code], onDelete: Cascade)
+
+  @@unique([currencyCode, date])
+  @@index([date])
+  @@index([currencyCode])
+}
+
+model FinancialMetrics {
+  id                  String   @id @default(uuid()) @db.Uuid
+  symbol              String   @db.VarChar(10)
+  year                Int
+  quarter             Int?
+  eps                 Float?
+  epsIndustry         Float?
+  pe                  Float?
+  peIndustry          Float?
+  roa                 Float?
+  roe                 Float?
+  roaIndustry         Float?
+  roeIndustry         Float?
+  revenue             Float?
+  margin              Float?
+  totalDebtToEquity   Float?
+  totalAssetsToEquity Float?
+  createdAt           DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+  stock               Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, year, quarter])
+  @@index([symbol])
+  @@index([year, quarter])
+}
+
+model SubscriptionPlan {
+  id            String                   @id @default(uuid()) @db.Uuid
+  name          String                   @db.VarChar(255)
+  description   String?
+  price         Decimal                  @db.Decimal(10, 2)
+  durationDays  Int
+  createdAt     DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime                 @updatedAt @db.Timestamptz(3)
+  subscriptions Subscription[]
+  symbols       SubscriptionPlanSymbol[]
+}
+
+model SubscriptionPlanSymbol {
+  id        String           @id @default(uuid()) @db.Uuid
+  planId    String           @db.Uuid
+  symbol    String           @db.VarChar(10)
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
+  plan      SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  stock     Stock            @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([planId, symbol])
+  @@index([planId])
+  @@index([symbol])
+}
+
+model Subscription {
+  id            String             @id @default(uuid()) @db.Uuid
+  userId        String             @db.Uuid
+  planId        String             @db.Uuid
+  startDate     DateTime           @default(now()) @db.Timestamptz(3)
+  endDate       DateTime           @db.Timestamptz(3)
+  status        SubscriptionStatus @default(ACTIVE)
+  createdBy     String?            @db.Uuid
+  updatedBy     String?            @db.Uuid
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @db.Timestamptz(3)
+  createdByUser User?              @relation("CreatedBy", fields: [createdBy], references: [id])
+  plan          SubscriptionPlan   @relation(fields: [planId], references: [id])
+  updatedByUser User?              @relation("UpdatedBy", fields: [updatedBy], references: [id])
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([startDate, endDate])
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+}
+
+model Post {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String    @db.VarChar(255)
+  slug        String    @unique @db.VarChar(255)
+  description String?
+  content     String?
+  thumbnailId Int?
+  categoryId  String    @db.Uuid
+  symbol      String?   @db.VarChar(10)
+  userId      String    @db.Uuid
+  isPremium   Boolean   @default(false)
+  deletedAt   DateTime? @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+  category    Category  @relation(fields: [categoryId], references: [id])
+  stock       Stock?    @relation(fields: [symbol], references: [symbol])
+  thumbnail   Image?    @relation(fields: [thumbnailId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId])
+  @@index([userId])
+  @@index([symbol])
+  @@index([slug])
+  @@index([isPremium])
+  @@index([deletedAt])
+}
+
+model Image {
+  id                Int        @id @default(autoincrement())
+  filename          String     @db.VarChar(191)
+  processedFilename String     @db.VarChar(191)
+  path              String     @db.VarChar(191)
+  url               String     @unique @db.VarChar(191)
+  altText           String?    @db.VarChar(191)
+  mimetype          String?    @db.VarChar(191)
+  size              Int?
+  width             Int?
+  height            Int?
+  createdAt         DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime   @updatedAt @db.Timestamptz(3)
+  categories        Category[]
+  posts             Post[]
+  users             User[]
+
+  @@index([url])
+}
+
+model StockProfile {
+  id        String   @id @default(uuid()) @db.Uuid
+  symbol    String   @unique @db.VarChar(10)
+  price     Float?
+  profit    Float?
+  volume    Float?
+  pe        Float?
+  eps       Float?
+  roa       Float?
+  roe       Float?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  stock     Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@index([symbol])
+}
+
+model SelectedStocks {
+  id        String   @id @default(uuid()) @db.Uuid
+  symbol    String   @db.VarChar(10)
+  date      DateTime @db.Date
+  close     Float?
+  return    Float?
+  qIndex    Float?
+  volume    Float?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  stock     Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date])
+  @@index([symbol])
+  @@index([date])
+  @@index([qIndex])
+}
+
+model Transaction {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  symbol        String?  @db.VarChar(10)
+  amount        Decimal  @db.Decimal(10, 2)
+  type          String   @db.VarChar(50)
+  status        String   @db.VarChar(50)
+  createdBy     String   @db.Uuid
+  updatedBy     String?  @db.Uuid
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+  createdByUser User     @relation("TransactionCreatedBy", fields: [createdBy], references: [id])
+  stock         Stock?   @relation(fields: [symbol], references: [symbol])
+  updatedByUser User?    @relation("TransactionUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([userId])
+  @@index([symbol])
+  @@index([status])
+  @@index([type])
+}
+
+model Watchlist {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  symbol    String   @db.VarChar(10)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  stock     Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([userId, symbol])
+  @@index([userId])
+  @@index([symbol])
+}
+
+/// Bảng FScore lưu trữ các chỉ số F-Score của từng mã cổ phiếu (mỗi symbol chỉ có 1 bản ghi).
+model FScore {
+  id                         String   @id @default(uuid()) @db.Uuid
+  /// Mã cổ phiếu (liên kết với Stock.symbol)
+  symbol                     String   @unique @db.VarChar(10)
+  /// Tỷ suất sinh lợi trên tài sản (ROA)
+  roa                        Float?
+  /// Dòng tiền từ hoạt động kinh doanh (CFO)
+  cfo                        Float?
+  /// Thay đổi ROA so với kỳ trước (ΔROA)
+  deltaRoa                   Float?
+  /// Chênh lệch giữa CFO và Lợi nhuận sau thuế (CFO - LNST)
+  cfoMinusNetProfit          Float?
+  /// Thay đổi nợ dài hạn (ΔNợ dài hạn)
+  deltaLongTermDebt          Float?
+  /// Thay đổi Current Ratio (ΔCurrent Ratio)
+  deltaCurrentRatio          Float?
+  /// Số lượng cổ phiếu phát hành mới (SLCP phát hành)
+  newlyIssuedShares          Float?
+  /// Thay đổi biên lợi nhuận gộp (ΔGross Margin)
+  deltaGrossMargin           Float?
+  /// Thay đổi vòng quay tài sản (ΔAsset Turnover)
+  deltaAssetTurnover         Float?
+  /// Giá so với EPS dự phóng
+  priceToForecastEps         Float?
+  /// ROA > 0
+  roaPositive                Boolean?
+  /// CFO > 0
+  cfoPositive                Boolean?
+  /// ΔROA > 0
+  deltaRoaPositive           Boolean?
+  /// CFO > LNST
+  cfoGreaterThanNetProfit    Boolean?
+  /// ΔNợ dài hạn < 0
+  deltaLongTermDebtNegative  Boolean?
+  /// ΔCurrent Ratio > 0
+  deltaCurrentRatioPositive  Boolean?
+  /// Không phát hành thêm cổ phiếu
+  noNewSharesIssued          Boolean?
+  /// ΔGross Margin > 0
+  deltaGrossMarginPositive   Boolean?
+  /// ΔAsset Turnover > 0
+  deltaAssetTurnoverPositive Boolean?
+  /// Thời gian tạo
+  createdAt                  DateTime @default(now()) @db.Timestamptz(3)
+  /// Thời gian cập nhật gần nhất
+  updatedAt                  DateTime @updatedAt @db.Timestamptz(3)
+  stock                      Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@index([symbol])
+}
+
+/// Bảng TechnicalAnalysis lưu chi tiết các chỉ báo phân tích kỹ thuật của từng cổ phiếu mỗi ngày.
+model TechnicalAnalysis {
+  id                           String   @id @default(uuid()) @db.Uuid
+  /// Mã cổ phiếu (liên kết Stock.symbol)
+  symbol                       String   @unique @db.VarChar(10)
+  /// Giá đóng cửa
+  close                        Float?
+  /// Chỉ số RSI 14 phiên
+  rsi14                        Float?
+  /// Đánh giá chỉ số RSI (BÁN, TRUNG LẬP, MUA)
+  rsiEvaluation                String?  @db.VarChar(20)
+  /// Giá trị Stochastic %K
+  stochasticK                  Float?
+  /// Đánh giá Stochastic (BÁN, TRUNG LẬP, MUA)
+  stochasticEvaluation         String?  @db.VarChar(20)
+  /// Giá trị Williams %R
+  williamsR                    Float?
+  /// Đánh giá Williams %R (BÁN, TRUNG LẬP, MUA)
+  williamsEvaluation           String?  @db.VarChar(20)
+  /// Ultimate Oscillator
+  ultimateOscillator           Float?
+  /// Đánh giá Ultimate Oscillator
+  ultimateOscillatorEvaluation String?  @db.VarChar(20)
+  /// MA 50 phiên
+  ma50                         Float?
+  /// MA 100 phiên
+  ma100                        Float?
+  /// MA 200 phiên
+  ma200                        Float?
+  /// Hull Moving Average 9 phiên
+  hma9                         Float?
+  /// Ichimoku Base Line
+  ichimokuBaseLine             Float?
+  /// Thời gian tạo
+  createdAt                    DateTime @default(now()) @db.Timestamptz(3)
+  /// Thời gian cập nhật gần nhất
+  updatedAt                    DateTime @updatedAt @db.Timestamptz(3)
+  /// Average Directional Index (ADX 14)
+  adx14                        Float?
+  /// Xu hướng ADX
+  adxEvaluation                String?  @db.VarChar(20)
+  /// Commodity Channel Index (CCI 20 phiên)
+  cci20                        Float?
+  /// Đánh giá CCI (BÁN, TRUNG LẬP, MUA)
+  cciEvaluation                String?  @db.VarChar(20)
+  /// Xu hướng HMA9
+  hma9Evaluation               String?  @db.VarChar(20)
+  /// Xu hướng Ichimoku Base Line
+  ichimokuBaseLineEvaluation   String?  @db.VarChar(20)
+  /// MA 10 phiên
+  ma10                         Float?
+  /// Xu hướng MA 100
+  ma100Evaluation              String?  @db.VarChar(20)
+  /// Xu hướng MA 10
+  ma10Evaluation               String?  @db.VarChar(20)
+  /// MA 20 phiên
+  ma20                         Float?
+  /// Xu hướng MA 200
+  ma200Evaluation              String?  @db.VarChar(20)
+  /// Xu hướng MA 20
+  ma20Evaluation               String?  @db.VarChar(20)
+  /// MA 30 phiên
+  ma30                         Float?
+  /// Xu hướng MA 30
+  ma30Evaluation               String?  @db.VarChar(20)
+  /// Xu hướng MA 50
+  ma50Evaluation               String?  @db.VarChar(20)
+  /// Xu hướng MACD
+  macdEvaluation               String?  @db.VarChar(20)
+  /// MACD Level (12, 26)
+  macdLevel                    Float?
+  /// Momentum (10 phiên)
+  momentum10                   Float?
+  /// Xu hướng Momentum
+  momentumEvaluation           String?  @db.VarChar(20)
+  /// Stochastic RSI Fast
+  stochasticRsiFast            Float?
+  /// Đánh giá Stochastic RSI Fast
+  stochasticRsiFastEvaluation  String?  @db.VarChar(20)
+  stock                        Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@index([symbol])
+}
+
+model TechnicalRecommendation {
+  id                 String   @id @default(uuid()) @db.Uuid
+  /// Ngày khuyến nghị
+  date               DateTime @db.Date
+  /// Mã cổ phiếu (liên kết Stock.symbol)
+  symbol             String   @db.VarChar(10)
+  /// Giá mở cửa
+  open               Float?
+  /// Giá cao nhất trong ngày
+  high               Float?
+  /// Giá thấp nhất trong ngày
+  low                Float?
+  /// Giá đóng cửa
+  close              Float?
+  /// Khối lượng giao dịch
+  volume             Float?
+  /// Chỉ số RSI 14 phiên
+  rsi14              Float?
+  /// Đường MACD Line
+  macdLine           Float?
+  /// Đường MACD Signal
+  macdSignal         Float?
+  /// Giá trị MACD Histogram
+  macdHistogram      Float?
+  /// Giá trị Stochastic %K
+  stochasticK        Float?
+  /// Giá trị Stochastic %D
+  stochasticD        Float?
+  /// Giá trị Williams %R
+  williamsR          Float?
+  /// Ultimate Oscillator
+  ultimateOscillator Float?
+  /// SMA 10 phiên
+  sma10              Float?
+  /// EMA 10 phiên
+  ema10              Float?
+  /// SMA 20 phiên
+  sma20              Float?
+  /// EMA 20 phiên
+  ema20              Float?
+  /// SMA 30 phiên
+  sma30              Float?
+  /// EMA 30 phiên
+  ema30              Float?
+  /// SMA 50 phiên
+  sma50              Float?
+  /// EMA 50 phiên
+  ema50              Float?
+  /// SMA 100 phiên
+  sma100             Float?
+  /// EMA 100 phiên
+  ema100             Float?
+  /// SMA 200 phiên
+  sma200             Float?
+  /// EMA 200 phiên
+  ema200             Float?
+  /// Hull Moving Average 9 phiên
+  hma9               Float?
+  /// Ichimoku Base Line 26 phiên
+  ichimokuBaseLine26 Float?
+  /// Thời gian tạo
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  /// Thời gian cập nhật gần nhất
+  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+  /// Chỉ số ADX 14 phiên (Average Directional Index)
+  adx14              Float?
+  /// Awesome Oscillator
+  awesomeOscillator  Float?
+  /// Bear Power 13 phiên
+  bearPower13        Float?
+  /// Bull Power 13 phiên
+  bullPower13        Float?
+  /// Commodity Channel Index 20 phiên (CCI 20)
+  cci20              Float?
+  /// Đường Minus DI 14 phiên (-DI)
+  minusDi14          Float?
+  /// Chỉ báo Momentum 10 phiên
+  momentum10         Float?
+  /// Đường Plus DI 14 phiên (+DI)
+  plusDi14           Float?
+  /// Stochastic RSI %D
+  stochRsiD          Float?
+  /// Stochastic RSI %K
+  stochRsiK          Float?
+  stock              Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([date, symbol])
+  @@index([symbol])
+  @@index([date])
+}
+
+model ChatGptAnalysis {
+  id                 String   @id @default(uuid()) @db.Uuid
+  /// Mã cổ phiếu (liên kết Stock.symbol)
+  symbol             String   @db.VarChar(10)
+  /// Ngày phân tích
+  analysisDate       DateTime @db.Date
+  /// Dữ liệu gốc gửi đến ChatGPT
+  inputData          Json?
+  /// Kết quả phân tích từ ChatGPT
+  analysisResult     String?  @db.Text
+  /// Khuyến nghị giao dịch (Mua, Bán, Quan sát, Không hành động)
+  tradingRecommendation String? @db.VarChar(50)
+  /// Vùng giá mua đề xuất
+  suggestedBuyRange  String?  @db.VarChar(100)
+  /// Mức cắt lỗ đề xuất
+  stopLossLevel      String?  @db.VarChar(100)
+  /// Thời gian tạo
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  /// Thời gian cập nhật gần nhất
+  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+  /// Liên kết với bảng Stock
+  stock              Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, analysisDate])
+  @@index([symbol])
+  @@index([analysisDate])
+}
+
+enum Role {
+  USER
+  AUTHOR
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+}
