@@ -41,7 +41,7 @@ display_logo() {
   echo " ╚████╔╝ ███████║██║ ╚═╝ ██║██║    ██████╔╝██████╔╝       ██║   ╚██████╔╝╚██████╔╝███████╗"
   echo "  ╚═══╝  ╚══════╝╚═╝     ╚═╝╚═╝    ╚═════╝ ╚═════╝        ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝"
   echo -e "${NC}"
-  echo -e "${GREEN}Vietnam Singapore Medical Institute${NC}"
+  echo -e "${GREEN}Vietnam Stock Market Institute${NC}"
   echo -e "${YELLOW}Phần mềm Quản Lý Database v2.0 - by Trần Danh Trọng${NC}"
   echo ""
 }
