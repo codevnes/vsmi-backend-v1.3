@@ -19,8 +19,8 @@ app.use('/processed', express.static(path.join(process.cwd(), 'public/images/pro
 
 // CORS setup
 app.use((req: Request, res: Response, next: NextFunction) => {
-  // Cho phép cả localhost:5173 và localhost:3000
-  const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000'];
+  // Allow localhost and production domains
+  const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000', 'https://vsmi.vn'];
   const origin = req.headers.origin;
   
   if (origin && allowedOrigins.includes(origin)) {
