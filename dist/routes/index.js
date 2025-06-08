@@ -18,6 +18,9 @@ const fscore_routes_1 = __importDefault(require("./fscore.routes"));
 const technicalAnalysis_1 = __importDefault(require("./technicalAnalysis"));
 const technicalRecommendation_1 = __importDefault(require("./technicalRecommendation"));
 const chatGptAnalysis_1 = __importDefault(require("./chatGptAnalysis"));
+const fscore_analysis_1 = __importDefault(require("./fscore-analysis"));
+const subscriptionPlan_1 = __importDefault(require("./subscriptionPlan"));
+const subscription_1 = __importDefault(require("./subscription"));
 const router = (0, express_1.Router)();
 // Combine all routes
 router.use('/auth', auth_1.default);
@@ -34,4 +37,7 @@ router.use('/fscores', fscore_routes_1.default);
 router.use('/technical-analyses', technicalAnalysis_1.default);
 router.use('/technical-recommendations', technicalRecommendation_1.default);
 router.use('/chatgpt-analyses', chatGptAnalysis_1.default);
+router.use('/fscore-analyses', fscore_analysis_1.default);
+router.use('/subscription-plans', subscriptionPlan_1.default);
+router.use('/subscriptions', subscription_1.default);
 exports.default = router;

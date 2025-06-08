@@ -62,7 +62,45 @@ class StockProfileService {
                 },
             },
         });
-        return profile;
+        // Get additional data
+        const [chatGptAnalysis, fscoreAnalysis, financialMetrics, fscore, technicalAnalysis] = await Promise.all([
+            // Get latest ChatGPT analysis
+            prisma.chatGptAnalysis.findFirst({
+                where: { symbol },
+                orderBy: { analysisDate: 'desc' },
+            }),
+            // Get latest F-Score analysis
+            prisma.fScoreAnalysis.findFirst({
+                where: { symbol },
+                orderBy: { analysisDate: 'desc' },
+            }),
+            // Get latest financial metrics
+            prisma.financialMetrics.findFirst({
+                where: { symbol },
+                orderBy: [
+                    { year: 'desc' },
+                    { quarter: 'desc' },
+                ],
+            }),
+            // Get latest F-Score
+            prisma.fScore.findFirst({
+                where: { symbol },
+                orderBy: { createdAt: 'desc' },
+            }),
+            // Get latest technical analysis
+            prisma.technicalAnalysis.findFirst({
+                where: { symbol },
+                orderBy: { createdAt: 'desc' },
+            }),
+        ]);
+        return {
+            ...profile,
+            chatGptAnalysis,
+            fscoreAnalysis,
+            financialMetrics,
+            fscore,
+            technicalAnalysis,
+        };
     }
     async createStockProfile(data) {
         // Verify that the stock exists

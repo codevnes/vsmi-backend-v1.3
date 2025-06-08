@@ -14,7 +14,7 @@ const router = Router();
 
 // Public routes
 router.get('/', getChatGptAnalyses as AsyncRequestHandler);
-router.get('/:symbol/latest', getLatestChatGptAnalysisBySymbol as AsyncRequestHandler);
+router.get('/:symbol', getLatestChatGptAnalysisBySymbol as AsyncRequestHandler);
 router.get('/:symbol/:date', getChatGptAnalysisBySymbolAndDate as AsyncRequestHandler);
 
 // Protected routes - Admin only

@@ -2,7 +2,7 @@
 
 ## Giới thiệu
 
-Chào mừng bạn đến với tài liệu API quản lý Stock (Mã chứng khoán) và StockPrice (Giá chứng khoán). Bộ tài liệu này cung cấp thông tin chi tiết về cách sử dụng và tích hợp API quản lý chứng khoán vào ứng dụng của bạn.
+Chào mừng bạn đến với tài liệu API quản lý Stock (Mã chứng khoán), StockPrice (Giá chứng khoán) và Subscription (Gói cước). Bộ tài liệu này cung cấp thông tin chi tiết về cách sử dụng và tích hợp API quản lý chứng khoán và gói cước vào ứng dụng của bạn.
 
 ## Nội dung
 
@@ -13,12 +13,13 @@ Bộ tài liệu này bao gồm:
 3. [**Module Structure**](./stock-module.md) - Cấu trúc module và cách nó hoạt động
 4. [**Testing Guide**](./stock-api-testing.md) - Hướng dẫn sử dụng Postman để kiểm thử API
 5. [**Financial Metrics API Documentation**](./financial-metrics-api.md) - Chi tiết về các endpoint API Financial Metrics, tham số, request/response format
+6. [**Subscription API Documentation**](./subscription-api.md) - Chi tiết về các endpoint API quản lý gói cước, tham số, request/response format
 
 ## Đối tượng sử dụng
 
 - **Developers**: Sử dụng API để tích hợp vào ứng dụng
 - **Testers**: Kiểm thử các endpoint API
-- **Admin**: Quản lý dữ liệu chứng khoán và giá chứng khoán
+- **Admin**: Quản lý dữ liệu chứng khoán, giá chứng khoán và gói cước
 
 ## Các tính năng chính
 
@@ -34,6 +35,13 @@ Bộ tài liệu này bao gồm:
 - Xem giá mới nhất của mã chứng khoán
 - Thêm, sửa, xóa dữ liệu giá (yêu cầu quyền Admin)
 - Nhập dữ liệu giá hàng loạt (yêu cầu quyền Admin)
+
+### Subscription API
+- Quản lý các gói cước trong hệ thống
+- Xem danh sách gói cước có sẵn
+- Đăng ký gói cước cho người dùng
+- Quản lý đăng ký gói cước (gia hạn, hủy, cập nhật)
+- Phân quyền sử dụng mã chứng khoán theo gói cước
 
 ## Bắt đầu nhanh
 
@@ -61,6 +69,26 @@ GET /api/stock-prices/symbol/VNM?startDate=2023-01-01&endDate=2023-01-31
 GET /api/stock-prices/symbol/VNM/latest
 ```
 
+### Xem danh sách gói cước
+
+```
+GET /api/subscription-plans
+```
+
+### Đăng ký gói cước mới
+
+```
+POST /api/subscriptions
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "userId": "<user_id>",
+  "planId": "<plan_id>",
+  "startDate": "2023-05-01T00:00:00.000Z"
+}
+```
+
 ### Tạo dữ liệu giá mới (yêu cầu quyền Admin)
 
 ```
@@ -85,4 +113,4 @@ Nếu bạn có bất kỳ câu hỏi hoặc gặp vấn đề khi sử dụng A
 
 ## Phiên bản
 
-Phiên bản hiện tại: 1.1.0 
+Phiên bản hiện tại: 1.2.0 

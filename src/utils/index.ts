@@ -8,4 +8,5 @@ export * from './stockPrice.constants';
 export * from './selectedStocks.constants';
 export * from './technicalAnalysis.constants';
 export * from './stockProfile.constants';
-export * from './technicalRecommendation.constants'; 
+export * from './technicalRecommendation.constants';
+export * from './subscription.constants'; 

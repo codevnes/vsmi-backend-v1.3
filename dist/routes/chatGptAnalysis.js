@@ -6,7 +6,7 @@ const middlewares_1 = require("../middlewares");
 const router = (0, express_1.Router)();
 // Public routes
 router.get('/', chatGptAnalysis_controller_1.getChatGptAnalyses);
-router.get('/:symbol/latest', chatGptAnalysis_controller_1.getLatestChatGptAnalysisBySymbol);
+router.get('/:symbol', chatGptAnalysis_controller_1.getLatestChatGptAnalysisBySymbol);
 router.get('/:symbol/:date', chatGptAnalysis_controller_1.getChatGptAnalysisBySymbolAndDate);
 // Protected routes - Admin only
 router.post('/', middlewares_1.verifyToken, middlewares_1.isAdmin, chatGptAnalysis_controller_1.processChatGptAnalysis);

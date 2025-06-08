@@ -22,7 +22,7 @@ const prisma = new PrismaClient();
 const PROMPT_PATH = path.join(process.cwd(), 'src/prompt/technical-recommendations.txt');
 const BATCH_SIZE = 5; // Number of symbols to process in a batch
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL = 'gpt-4-turbo';
+const MODEL = 'gpt-4.1';
 
 // Define command line options
 program

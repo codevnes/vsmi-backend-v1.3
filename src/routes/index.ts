@@ -13,6 +13,9 @@ import fscoreRoutes from './fscore.routes';
 import technicalAnalysisRoutes from './technicalAnalysis';
 import technicalRecommendationRoutes from './technicalRecommendation';
 import chatGptAnalysis from './chatGptAnalysis';
+import fscoreAnalysisRoutes from './fscore-analysis';
+import subscriptionPlanRoutes from './subscriptionPlan';
+import subscriptionRoutes from './subscription';
 
 const router = Router();
 
@@ -31,5 +34,8 @@ router.use('/fscores', fscoreRoutes);
 router.use('/technical-analyses', technicalAnalysisRoutes);
 router.use('/technical-recommendations', technicalRecommendationRoutes);
 router.use('/chatgpt-analyses', chatGptAnalysis);
+router.use('/fscore-analyses', fscoreAnalysisRoutes);
+router.use('/subscription-plans', subscriptionPlanRoutes);
+router.use('/subscriptions', subscriptionRoutes);
 
 export default router;

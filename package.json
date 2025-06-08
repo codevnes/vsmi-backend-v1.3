@@ -19,6 +19,7 @@
     "import:technical-analyses": "node scripts/import-technical-analyses.js",
     "import:technical-recommendations": "node scripts/import-technical-recommendations.js",
     "process:chatgpt-analysis": "node scripts/process-chatgpt-analysis.js",
+    "process:fscore-analysis": "node scripts/process-fscore-analysis.js",
     "inspect:excel": "node scripts/inspect-excel.js"
   },
   "keywords": [],
@@ -34,7 +35,7 @@
     "commander": "^14.0.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "inquirer": "^12.6.3",
+    "inquirer": "^8.2.4",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.0",
     "openai": "^5.1.1",

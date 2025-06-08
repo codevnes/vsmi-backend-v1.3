@@ -1,6 +1,9 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OpenAIService = exports.TechnicalRecommendationService = exports.TechnicalAnalysisService = exports.StockProfileService = exports.FinancialMetricsService = exports.StockPriceService = exports.StockService = exports.PostService = exports.ImageService = exports.CategoryService = exports.UserService = exports.AuthService = exports.openAIService = exports.technicalRecommendationService = exports.technicalAnalysisService = exports.stockProfileService = exports.fscoreService = exports.financialMetricsService = exports.stockPriceService = exports.stockService = exports.postService = exports.imageService = exports.categoryService = exports.userService = exports.authService = void 0;
+exports.SubscriptionService = exports.SubscriptionPlanService = exports.OpenAIService = exports.TechnicalRecommendationService = exports.TechnicalAnalysisService = exports.StockProfileService = exports.FinancialMetricsService = exports.StockPriceService = exports.StockService = exports.PostService = exports.ImageService = exports.CategoryService = exports.UserService = exports.AuthService = exports.fscoreService = exports.subscriptionService = exports.subscriptionPlanService = exports.openAIService = exports.technicalRecommendationService = exports.technicalAnalysisService = exports.stockProfileService = exports.financialMetricsService = exports.stockPriceService = exports.stockService = exports.postService = exports.imageService = exports.categoryService = exports.userService = exports.authService = void 0;
 const auth_service_1 = require("./auth.service");
 Object.defineProperty(exports, "AuthService", { enumerable: true, get: function () { return auth_service_1.AuthService; } });
 const user_service_1 = require("./user.service");
@@ -17,7 +20,6 @@ const stockPrice_service_1 = require("./stockPrice.service");
 Object.defineProperty(exports, "StockPriceService", { enumerable: true, get: function () { return stockPrice_service_1.StockPriceService; } });
 const financialMetrics_service_1 = require("./financialMetrics.service");
 Object.defineProperty(exports, "FinancialMetricsService", { enumerable: true, get: function () { return financialMetrics_service_1.FinancialMetricsService; } });
-const fscore_service_1 = require("./fscore.service");
 const stockProfile_service_1 = require("./stockProfile.service");
 Object.defineProperty(exports, "StockProfileService", { enumerable: true, get: function () { return stockProfile_service_1.StockProfileService; } });
 const technicalAnalysis_service_1 = require("./technicalAnalysis.service");
@@ -26,6 +28,12 @@ const technicalRecommendation_service_1 = require("./technicalRecommendation.ser
 Object.defineProperty(exports, "TechnicalRecommendationService", { enumerable: true, get: function () { return technicalRecommendation_service_1.TechnicalRecommendationService; } });
 const openai_service_1 = require("./openai.service");
 Object.defineProperty(exports, "OpenAIService", { enumerable: true, get: function () { return openai_service_1.OpenAIService; } });
+const subscriptionPlan_service_1 = require("./subscriptionPlan.service");
+Object.defineProperty(exports, "SubscriptionPlanService", { enumerable: true, get: function () { return subscriptionPlan_service_1.SubscriptionPlanService; } });
+const subscription_service_1 = require("./subscription.service");
+Object.defineProperty(exports, "SubscriptionService", { enumerable: true, get: function () { return subscription_service_1.SubscriptionService; } });
+const fscore_service_1 = __importDefault(require("./fscore.service"));
+exports.fscoreService = fscore_service_1.default;
 // Export instances
 exports.authService = new auth_service_1.AuthService();
 exports.userService = new user_service_1.UserService();
@@ -35,8 +43,9 @@ exports.postService = new post_service_1.PostService();
 exports.stockService = new stock_service_1.StockService();
 exports.stockPriceService = new stockPrice_service_1.StockPriceService();
 exports.financialMetricsService = new financialMetrics_service_1.FinancialMetricsService();
-exports.fscoreService = new fscore_service_1.FScoreService();
 exports.stockProfileService = new stockProfile_service_1.StockProfileService();
 exports.technicalAnalysisService = new technicalAnalysis_service_1.TechnicalAnalysisService();
 exports.technicalRecommendationService = new technicalRecommendation_service_1.TechnicalRecommendationService();
 exports.openAIService = new openai_service_1.OpenAIService();
+exports.subscriptionPlanService = new subscriptionPlan_service_1.SubscriptionPlanService();
+exports.subscriptionService = new subscription_service_1.SubscriptionService();

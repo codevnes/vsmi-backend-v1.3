@@ -10,7 +10,7 @@ const path_1 = __importDefault(require("path"));
 const env_config_1 = require("../config/env.config");
 const app_1 = require("../app");
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL = 'gpt-4-turbo';
+const MODEL = 'gpt-4.1';
 const TECHNICAL_RECOMMENDATION_PROMPT_PATH = path_1.default.join(process.cwd(), 'src/prompt/technical-recommendations.txt');
 class OpenAIService {
     apiKey;

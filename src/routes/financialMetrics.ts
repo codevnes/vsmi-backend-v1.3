@@ -16,9 +16,9 @@ const router = Router();
 
 // Public routes - for both authenticated and non-authenticated users
 router.get('/', getFinancialMetrics as AsyncRequestHandler);
-router.get('/stock/:symbol', getFinancialMetricsBySymbol as AsyncRequestHandler);
-router.get('/stock/:symbol/year/:year/quarter/:quarter', getFinancialMetricsBySymbolYearQuarter as AsyncRequestHandler);
-router.get('/stock/:symbol/year/:year', getFinancialMetricsBySymbolYearQuarter as AsyncRequestHandler);
+router.get('/:symbol', getFinancialMetricsBySymbol as AsyncRequestHandler);
+router.get('/:symbol/year/:year/quarter/:quarter', getFinancialMetricsBySymbolYearQuarter as AsyncRequestHandler);
+router.get('/:symbol/year/:year', getFinancialMetricsBySymbolYearQuarter as AsyncRequestHandler);
 router.get('/:id', getFinancialMetricsById as AsyncRequestHandler);
 
 // Protected routes - only for authenticated admin users

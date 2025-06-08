@@ -6,7 +6,7 @@ const middlewares_1 = require("../middlewares");
 const router = (0, express_1.Router)();
 // Public routes
 router.get('/', technicalRecommendation_controller_1.getTechnicalRecommendations);
-router.get('/:symbol/latest', technicalRecommendation_controller_1.getLatestTechnicalRecommendationBySymbol);
+router.get('/:symbol', technicalRecommendation_controller_1.getLatestTechnicalRecommendationBySymbol);
 router.get('/:symbol/:date', technicalRecommendation_controller_1.getTechnicalRecommendationBySymbolAndDate);
 // Protected routes - Admin only
 router.post('/', middlewares_1.verifyToken, middlewares_1.isAdmin, technicalRecommendation_controller_1.createTechnicalRecommendation);

@@ -15,7 +15,7 @@ const router = Router();
 
 // Public routes
 router.get('/', getTechnicalRecommendations as AsyncRequestHandler);
-router.get('/:symbol/latest', getLatestTechnicalRecommendationBySymbol as AsyncRequestHandler);
+router.get('/:symbol', getLatestTechnicalRecommendationBySymbol as AsyncRequestHandler);
 router.get('/:symbol/:date', getTechnicalRecommendationBySymbolAndDate as AsyncRequestHandler);
 
 // Protected routes - Admin only

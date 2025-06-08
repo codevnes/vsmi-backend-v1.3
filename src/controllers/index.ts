@@ -11,4 +11,6 @@ export * from './stockProfile.controller';
 export * from './technicalAnalysis.controller';
 export * from './selectedStocks.controller';
 export * from './technicalRecommendation.controller';
-export * from './chatGptAnalysis.controller'; 
+export * from './chatGptAnalysis.controller';
+export * from './subscriptionPlan.controller';
+export * from './subscription.controller'; 

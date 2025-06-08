@@ -28,3 +28,5 @@ __exportStar(require("./technicalAnalysis.controller"), exports);
 __exportStar(require("./selectedStocks.controller"), exports);
 __exportStar(require("./technicalRecommendation.controller"), exports);
 __exportStar(require("./chatGptAnalysis.controller"), exports);
+__exportStar(require("./subscriptionPlan.controller"), exports);
+__exportStar(require("./subscription.controller"), exports);

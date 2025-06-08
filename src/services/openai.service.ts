@@ -5,7 +5,7 @@ import { envConfig } from '../config/env.config';
 import { prisma } from '../app';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL = 'gpt-4-turbo';
+const MODEL = 'gpt-4.1';
 const TECHNICAL_RECOMMENDATION_PROMPT_PATH = path.join(process.cwd(), 'src/prompt/technical-recommendations.txt');
 
 export class OpenAIService {

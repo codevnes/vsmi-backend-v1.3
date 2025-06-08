@@ -11,6 +11,9 @@ import { StockProfileService } from './stockProfile.service';
 import { TechnicalAnalysisService } from './technicalAnalysis.service';
 import { TechnicalRecommendationService } from './technicalRecommendation.service';
 import { OpenAIService } from './openai.service';
+import { SubscriptionPlanService } from './subscriptionPlan.service';
+import { SubscriptionService } from './subscription.service';
+import fscoreService from './fscore.service';
 
 // Export instances
 export const authService = new AuthService();
@@ -21,11 +24,13 @@ export const postService = new PostService();
 export const stockService = new StockService();
 export const stockPriceService = new StockPriceService();
 export const financialMetricsService = new FinancialMetricsService();
-export const fscoreService = new FScoreService();
 export const stockProfileService = new StockProfileService();
 export const technicalAnalysisService = new TechnicalAnalysisService();
 export const technicalRecommendationService = new TechnicalRecommendationService();
 export const openAIService = new OpenAIService();
+export const subscriptionPlanService = new SubscriptionPlanService();
+export const subscriptionService = new SubscriptionService();
+export { fscoreService };
 
 // Export classes
 export { 
@@ -40,5 +45,7 @@ export {
   StockProfileService,
   TechnicalAnalysisService,
   TechnicalRecommendationService,
-  OpenAIService
+  OpenAIService,
+  SubscriptionPlanService,
+  SubscriptionService
 };

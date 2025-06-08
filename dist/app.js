@@ -21,9 +21,20 @@ app.use('/images', express_1.default.static(path_1.default.join(process.cwd(), '
 app.use('/processed', express_1.default.static(path_1.default.join(process.cwd(), 'public/images/processed')));
 // CORS setup
 app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    // Cho phép cả localhost:5173 và localhost:3000
+    const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000'];
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    // Handle preflight OPTIONS requests
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+        return;
+    }
     next();
 });
 // Routes

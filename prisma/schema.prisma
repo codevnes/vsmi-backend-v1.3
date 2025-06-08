@@ -60,6 +60,7 @@ model Stock {
   transactions             Transaction[]
   watchlists               Watchlist[]
   chatGptAnalyses          ChatGptAnalysis[]
+  fscoreAnalyses           FScoreAnalysis[]
 
   @@index([symbol])
   @@index([industry])
@@ -557,6 +558,34 @@ model ChatGptAnalysis {
   suggestedBuyRange  String?  @db.VarChar(100)
   /// Mức cắt lỗ đề xuất
   stopLossLevel      String?  @db.VarChar(100)
+  /// Thời gian tạo
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  /// Thời gian cập nhật gần nhất
+  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+  /// Liên kết với bảng Stock
+  stock              Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, analysisDate])
+  @@index([symbol])
+  @@index([analysisDate])
+}
+
+model FScoreAnalysis {
+  id                 String   @id @default(uuid()) @db.Uuid
+  /// Mã cổ phiếu (liên kết Stock.symbol)
+  symbol             String   @db.VarChar(10)
+  /// Ngày phân tích
+  analysisDate       DateTime @db.Date
+  /// Dữ liệu gốc gửi đến ChatGPT
+  inputData          Json?
+  /// Kết quả phân tích từ ChatGPT
+  analysisResult     String?  @db.Text
+  /// Khuyến nghị đầu tư (Mua, Bán, Quan sát, Không hành động)
+  tradingRecommendation String? @db.VarChar(255)
+  /// Vùng giá mua đề xuất
+  suggestedBuyRange  String?  @db.VarChar(255)
+  /// Mức cắt lỗ đề xuất
+  stopLossLevel      String?  @db.VarChar(255)
   /// Thời gian tạo
   createdAt          DateTime @default(now()) @db.Timestamptz(3)
   /// Thời gian cập nhật gần nhất

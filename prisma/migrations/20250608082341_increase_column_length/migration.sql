@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "FScoreAnalysis" ALTER COLUMN "tradingRecommendation" SET DATA TYPE VARCHAR(255),
+ALTER COLUMN "suggestedBuyRange" SET DATA TYPE VARCHAR(255),
+ALTER COLUMN "stopLossLevel" SET DATA TYPE VARCHAR(255);
