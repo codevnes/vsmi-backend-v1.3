@@ -130,7 +130,7 @@ class FScoreService {
             // Check if the analysis already exists
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const existingAnalysis = await app_1.prisma.FScoreAnalysis.findFirst({
+            const existingAnalysis = await app_1.prisma.fScoreAnalysis.findFirst({
                 where: {
                     symbol,
                     analysisDate: {
@@ -152,7 +152,7 @@ class FScoreService {
             // Extract structured data from the analysis
             const extractedData = this.extractStructuredDataFromAnalysis(analysisResult);
             // Store the analysis in the database using upsert to handle duplicates
-            const savedAnalysis = await app_1.prisma.FScoreAnalysis.upsert({
+            const savedAnalysis = await app_1.prisma.fScoreAnalysis.upsert({
                 where: {
                     symbol_analysisDate: {
                         symbol,

@@ -65,17 +65,17 @@ class StockProfileService {
         // Get additional data
         const [chatGptAnalysis, fscoreAnalysis, financialMetrics, fscore, technicalAnalysis] = await Promise.all([
             // Get latest ChatGPT analysis
-            prisma.chatGptAnalysis.findFirst({
+            prisma.chatGptAnalysis.findMany({
                 where: { symbol },
                 orderBy: { analysisDate: 'desc' },
             }),
             // Get latest F-Score analysis
-            prisma.fScoreAnalysis.findFirst({
+            prisma.fScoreAnalysis.findMany({
                 where: { symbol },
                 orderBy: { analysisDate: 'desc' },
             }),
             // Get latest financial metrics
-            prisma.financialMetrics.findFirst({
+            prisma.financialMetrics.findMany({
                 where: { symbol },
                 orderBy: [
                     { year: 'desc' },
@@ -83,12 +83,12 @@ class StockProfileService {
                 ],
             }),
             // Get latest F-Score
-            prisma.fScore.findFirst({
+            prisma.fScore.findMany({
                 where: { symbol },
                 orderBy: { createdAt: 'desc' },
             }),
             // Get latest technical analysis
-            prisma.technicalAnalysis.findFirst({
+            prisma.technicalAnalysis.findMany({
                 where: { symbol },
                 orderBy: { createdAt: 'desc' },
             }),

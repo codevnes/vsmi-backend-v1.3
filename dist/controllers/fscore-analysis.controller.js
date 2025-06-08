@@ -20,7 +20,7 @@ const getFScoreAnalysis = async (req, res) => {
         // Check if an analysis already exists for today
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const existingAnalysis = await app_1.prisma.FScoreAnalysis.findFirst({
+        const existingAnalysis = await app_1.prisma.fScoreAnalysis.findFirst({
             where: {
                 symbol,
                 analysisDate: {
@@ -106,7 +106,7 @@ const getAllFScoreAnalyses = async (req, res) => {
         }
         // Query with pagination and filtering
         const [analyses, total] = await Promise.all([
-            app_1.prisma.FScoreAnalysis.findMany({
+            app_1.prisma.fScoreAnalysis.findMany({
                 where,
                 orderBy: {
                     analysisDate: 'desc'
@@ -114,7 +114,7 @@ const getAllFScoreAnalyses = async (req, res) => {
                 skip,
                 take: parsedLimit
             }),
-            app_1.prisma.FScoreAnalysis.count({
+            app_1.prisma.fScoreAnalysis.count({
                 where
             })
         ]);
