@@ -106,7 +106,7 @@ export class FScoreService {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const existingAnalysis = await prisma.FScoreAnalysis.findFirst({
+      const existingAnalysis = await prisma.fScoreAnalysis.findFirst({
         where: { 
           symbol,
           analysisDate: {
@@ -134,7 +134,7 @@ export class FScoreService {
       const extractedData = this.extractStructuredDataFromAnalysis(analysisResult);
 
       // Store the analysis in the database using upsert to handle duplicates
-      const savedAnalysis = await prisma.FScoreAnalysis.upsert({
+      const savedAnalysis = await prisma.fScoreAnalysis.upsert({
         where: {
           symbol_analysisDate: {
             symbol,

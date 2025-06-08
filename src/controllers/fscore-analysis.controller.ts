@@ -19,7 +19,7 @@ export const getFScoreAnalysis = async (req: Request, res: Response) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const existingAnalysis = await prisma.FScoreAnalysis.findFirst({
+    const existingAnalysis = await prisma.fScoreAnalysis.findFirst({
       where: {
         symbol,
         analysisDate: {
@@ -111,7 +111,7 @@ export const getAllFScoreAnalyses = async (req: Request, res: Response) => {
 
     // Query with pagination and filtering
     const [analyses, total] = await Promise.all([
-      prisma.FScoreAnalysis.findMany({
+      prisma.fScoreAnalysis.findMany({
         where,
         orderBy: {
           analysisDate: 'desc'
@@ -119,7 +119,7 @@ export const getAllFScoreAnalyses = async (req: Request, res: Response) => {
         skip,
         take: parsedLimit
       }),
-      prisma.FScoreAnalysis.count({
+      prisma.fScoreAnalysis.count({
         where
       })
     ]);
