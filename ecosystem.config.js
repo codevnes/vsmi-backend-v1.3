@@ -18,12 +18,7 @@ module.exports = {
       autorestart: true,
       merge_logs: true,
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
-      node_args: '--max-old-space-size=1024',
-      kill_timeout: 3000,
-      wait_ready: true,
       listen_timeout: 50000,
-      cron_restart: '0 3 * * *',
-      exp_backoff_restart_delay: 100
     }
   ]
 }; 
