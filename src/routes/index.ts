@@ -16,6 +16,7 @@ import chatGptAnalysis from './chatGptAnalysis';
 import fscoreAnalysisRoutes from './fscore-analysis';
 import subscriptionPlanRoutes from './subscriptionPlan';
 import subscriptionRoutes from './subscription';
+import newsArticleRoutes from './newsArticle.routes';
 
 const router = Router();
 
@@ -37,5 +38,6 @@ router.use('/chatgpt-analyses', chatGptAnalysis);
 router.use('/fscore-analyses', fscoreAnalysisRoutes);
 router.use('/subscription-plans', subscriptionPlanRoutes);
 router.use('/subscriptions', subscriptionRoutes);
+router.use('/news', newsArticleRoutes);
 
 export default router;

@@ -14,9 +14,9 @@ import { AsyncRequestHandler, AsyncAuthRequestHandler } from '../types/express';
 const router = Router();
 
 // Public routes
-router.get('/symbol/:symbol', getStockPrices as AsyncRequestHandler);
-router.get('/symbol/:symbol/date/:date', getStockPriceByDate as AsyncRequestHandler);
-router.get('/symbol/:symbol/latest', getLatestStockPrice as AsyncRequestHandler);
+router.get('/:symbol', getStockPrices as AsyncRequestHandler);
+router.get('/:symbol/date/:date', getStockPriceByDate as AsyncRequestHandler);
+router.get('/:symbol/latest', getLatestStockPrice as AsyncRequestHandler);
 
 // Protected routes - Admin only
 router.post('/', verifyToken, isAdmin, createStockPrice as AsyncAuthRequestHandler);

@@ -20,7 +20,12 @@
     "import:technical-recommendations": "node scripts/import-technical-recommendations.js",
     "process:chatgpt-analysis": "node scripts/process-chatgpt-analysis.js",
     "process:fscore-analysis": "node scripts/process-fscore-analysis.js",
-    "inspect:excel": "node scripts/inspect-excel.js"
+    "inspect:excel": "node scripts/inspect-excel.js",
+    "crawl:news": "ts-node scripts/crawlNews.ts",
+    "crawl:interval": "ts-node scripts/crawlNewsScheduled.ts",
+    "crawl:daemon": "ts-node scripts/daemon.ts",
+    "crawl:daemon:background": "nohup ts-node scripts/daemon.ts > /dev/null 2>&1 &",
+    "crawl:daemon:stop": "kill $(cat crawler-daemon.pid)"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +37,7 @@
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",
     "chalk": "^5.4.1",
+    "cheerio": "^1.1.0",
     "commander": "^14.0.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",

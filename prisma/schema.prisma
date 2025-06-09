@@ -598,6 +598,23 @@ model FScoreAnalysis {
   @@index([analysisDate])
 }
 
+model NewsArticle {
+  id            String    @id @default(uuid()) @db.Uuid
+  title         String    @db.VarChar(255)
+  url           String    @unique @db.VarChar(500)
+  originalContent String  @db.Text
+  summarizedContent String @db.Text
+  sourceWebsite String?   @db.VarChar(100)
+  symbol        String?   @db.VarChar(10)
+  publishedAt   DateTime? @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([symbol])
+  @@index([publishedAt])
+  @@index([sourceWebsite])
+}
+
 enum Role {
   USER
   AUTHOR
