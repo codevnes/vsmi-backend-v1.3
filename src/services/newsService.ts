@@ -38,7 +38,7 @@ export async function crawlTitlesLinks(url: string): Promise<Article[]> {
     // 3. Get all articles in the .tlitem class (main article list)
     const articles: Article[] = [];
     
-    $('.tlitem.box-category-item').each((i: number, el: cheerio.Element) => {
+    $('.tlitem.box-category-item').each((i: number, el: any) => {
       const aTag = $(el).find('h3 > a').first();
       const title = aTag.text().trim();
       let href = aTag.attr('href');
