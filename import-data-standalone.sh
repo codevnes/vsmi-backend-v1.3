@@ -40,6 +40,42 @@ warning() {
     echo -e "${YELLOW}$1${NC}"
 }
 
+# Kiểm tra và cài đặt pandas
+install_pandas() {
+    echo "Kiểm tra và cài đặt pandas..."
+    
+    # Kiểm tra python3 và pip3
+    if ! command -v python3 &> /dev/null; then
+        error "Không tìm thấy Python 3. Vui lòng cài đặt Python 3 trước khi tiếp tục."
+    fi
+    
+    if ! command -v pip3 &> /dev/null; then
+        warning "pip3 không được tìm thấy. Đang cài đặt pip..."
+        python3 -m ensurepip || {
+            error "Không thể cài đặt pip. Vui lòng cài đặt pip thủ công."
+        }
+    fi
+    
+    # Kiểm tra và cài đặt pandas
+    if ! python3 -c "import pandas" 2>/dev/null; then
+        warning "Pandas không được tìm thấy. Đang cài đặt..."
+        pip3 install pandas openpyxl --user || {
+            # Thử cài đặt với sudo nếu cài đặt --user không thành công
+            warning "Không thể cài đặt pandas cho user. Đang thử cài đặt với sudo..."
+            sudo pip3 install pandas openpyxl || {
+                error "Không thể cài đặt pandas. Vui lòng cài đặt thủ công bằng lệnh: pip3 install pandas openpyxl"
+            }
+        }
+        
+        # Kiểm tra lại sau khi cài đặt
+        if ! python3 -c "import pandas" 2>/dev/null; then
+            error "Pandas vẫn không được tìm thấy sau khi cài đặt. Vui lòng cài đặt thủ công."
+        fi
+    fi
+    
+    success "pandas đã được cài đặt thành công."
+}
+
 # Kiểm tra các công cụ cần thiết
 check_dependencies() {
     echo "Kiểm tra công cụ cần thiết..."
@@ -49,13 +85,16 @@ check_dependencies() {
         error "Không tìm thấy PostgreSQL client (psql). Vui lòng cài đặt PostgreSQL client."
     fi
     
-    # Kiểm tra python và pandas
+    # Kiểm tra python3
     if ! command -v python3 &> /dev/null; then
-        error "Không tìm thấy Python. Vui lòng cài đặt Python 3."
+        error "Không tìm thấy Python 3. Vui lòng cài đặt Python 3."
     fi
     
     # Tạo thư mục tạm nếu chưa tồn tại
     mkdir -p "$CSV_TEMP_DIR"
+    
+    # Cài đặt pandas
+    install_pandas
     
     # Tạo script Python để xử lý Excel
     cat > "$CSV_TEMP_DIR/excel_to_csv.py" << 'EOF'
@@ -63,19 +102,24 @@ check_dependencies() {
 import pandas as pd
 import sys
 import os
+import re
 
 def convert_excel_to_csv(excel_file, sheet_name=0, output_file=None):
     """Convert Excel file to CSV format"""
     try:
         # Đọc file Excel
         print(f"Đọc file Excel: {excel_file}")
-        if sheet_name.isdigit():
+        if str(sheet_name).isdigit():
             sheet_name = int(sheet_name)
         df = pd.read_excel(excel_file, sheet_name=sheet_name)
         
+        # Tạo tên file an toàn không có khoảng trắng
+        base_name = os.path.splitext(os.path.basename(excel_file))[0]
+        safe_name = re.sub(r'\s+', '_', base_name)  # Thay thế khoảng trắng bằng dấu gạch dưới
+        
         # Nếu không chỉ định output file, tạo tên dựa trên file gốc
         if output_file is None:
-            output_file = os.path.splitext(os.path.basename(excel_file))[0] + ".csv"
+            output_file = os.path.join(os.path.dirname(excel_file), f"{safe_name}.csv")
         
         # Ghi ra file CSV
         df.to_csv(output_file, index=False)
@@ -160,12 +204,6 @@ if __name__ == "__main__":
         output_file = sys.argv[3] if len(sys.argv) > 3 else None
         convert_excel_to_csv(excel_file, sheet_name, output_file)
 EOF
-
-    # Cài đặt pandas nếu cần
-    python3 -c "import pandas" 2>/dev/null || {
-        echo "Cài đặt pandas..."
-        pip3 install pandas openpyxl
-    }
     
     # Cho phép thực thi script Python
     chmod +x "$CSV_TEMP_DIR/excel_to_csv.py"
@@ -229,23 +267,34 @@ check_file() {
 
 # Function chuyển đổi Excel sang CSV
 convert_to_csv() {
-    local excel_file=$1
-    local sheet_name=${2:-0}
-    local csv_file="$CSV_TEMP_DIR/$(basename "${excel_file%.*}").csv"
+    local excel_file="$1"
+    local sheet_name="${2:-0}"
+    
+    # Tạo tên file CSV an toàn
+    local base_name=$(basename "${excel_file%.*}")
+    local safe_name=$(echo "$base_name" | tr ' ' '_')
+    local csv_file="$CSV_TEMP_DIR/${safe_name}.csv"
     
     echo "Chuyển đổi Excel sang CSV..."
-    python3 "$CSV_TEMP_DIR/excel_to_csv.py" "$excel_file" "$sheet_name" "$csv_file"
     
-    echo $csv_file
+    # Chạy python script để convert và lấy kết quả
+    csv_path=$(python3 "$CSV_TEMP_DIR/excel_to_csv.py" "$excel_file" "$sheet_name" "$csv_file")
+    
+    # Kiểm tra xem file có được tạo thành công
+    if [ ! -f "$csv_file" ]; then
+        error "Không thể tạo file CSV từ Excel file"
+    fi
+    
+    echo "$csv_file"
 }
 
 # Function import cổ phiếu
 import_stocks() {
-    local csv_file=$1
+    local csv_file="$1"
     echo "Importing stocks từ $csv_file..."
     
     # Tạo bảng tạm để import dữ liệu
-    PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << EOF
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" << EOF
 -- Tạo bảng tạm
 CREATE TEMP TABLE temp_stocks (
     symbol VARCHAR(10),
@@ -284,11 +333,11 @@ EOF
 
 # Function import giá cổ phiếu
 import_stock_prices() {
-    local csv_file=$1
+    local csv_file="$1"
     echo "Importing stock prices từ $csv_file..."
     
     # Tạo bảng tạm để import dữ liệu
-    PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << EOF
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" << EOF
 -- Tạo bảng tạm
 CREATE TEMP TABLE temp_stock_prices (
     symbol VARCHAR(10),
@@ -360,11 +409,11 @@ EOF
 
 # Function import chỉ số tài chính
 import_financial_metrics() {
-    local csv_file=$1
+    local csv_file="$1"
     echo "Importing financial metrics từ $csv_file..."
     
     # Tạo bảng tạm để import dữ liệu
-    PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << EOF
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" << EOF
 -- Tạo bảng tạm
 CREATE TEMP TABLE temp_financial_metrics (
     symbol VARCHAR(10),
@@ -447,7 +496,7 @@ EOF
 
 # Function kiểm tra cấu trúc file Excel
 inspect_excel() {
-    local excel_file=$1
+    local excel_file="$1"
     echo "Kiểm tra cấu trúc file Excel: $excel_file..."
     python3 "$CSV_TEMP_DIR/excel_to_csv.py" "$excel_file" "inspect"
 }
