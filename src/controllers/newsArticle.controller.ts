@@ -126,7 +126,7 @@ export const getNewsSources = async (_req: Request, res: Response): Promise<void
       },
     });
 
-    res.json(sources.map(s => s.sourceWebsite).filter(Boolean));
+    res.json(sources.map((s: { sourceWebsite: string | null }) => s.sourceWebsite).filter(Boolean));
   } catch (error) {
     console.error('Error getting news sources:', error);
     res.status(500).json({ error: 'Internal server error' });
