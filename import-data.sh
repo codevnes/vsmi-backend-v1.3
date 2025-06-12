@@ -173,7 +173,7 @@ fi
 # Xử lý file input, kiểm tra xem đó là URL hay đường dẫn local
 if is_url "$file_input"; then
     # Nếu là URL, tải về file tạm
-    temp_file=$(download_file "$file_input")
+    temp_file=$(download_file "$file_input" | tail -n 1)
     file_path=$temp_file
 else
     # Nếu là đường dẫn local, kiểm tra xem file có tồn tại không
