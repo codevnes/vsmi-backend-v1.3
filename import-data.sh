@@ -52,19 +52,19 @@ download_file() {
     local url=$1
     local temp_file=$(mktemp)
     
-    echo -e "Đang tải file từ URL: ${BLUE}$url${NC}"
+    echo -e "Đang tải file từ URL: ${BLUE}$url${NC}" >&2
     
     # Thử tải bằng curl nếu có
     if command -v curl &> /dev/null; then
         if curl -L --fail "$url" -o "$temp_file" 2>/dev/null; then
-            echo -e "Đã tải file ${GREEN}thành công${NC}"
+            echo -e "Đã tải file ${GREEN}thành công${NC}" >&2
             echo "$temp_file"
             return 0
         fi
     # Hoặc thử tải bằng wget
     elif command -v wget &> /dev/null; then
         if wget -q "$url" -O "$temp_file" 2>/dev/null; then
-            echo -e "Đã tải file ${GREEN}thành công${NC}"
+            echo -e "Đã tải file ${GREEN}thành công${NC}" >&2
             echo "$temp_file"
             return 0
         fi
@@ -173,7 +173,7 @@ fi
 # Xử lý file input, kiểm tra xem đó là URL hay đường dẫn local
 if is_url "$file_input"; then
     # Nếu là URL, tải về file tạm
-    temp_file=$(download_file "$file_input" | tail -n 1)
+    temp_file=$(download_file "$file_input")
     file_path=$temp_file
 else
     # Nếu là đường dẫn local, kiểm tra xem file có tồn tại không
