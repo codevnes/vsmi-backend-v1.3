@@ -15,6 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const XLSX = require('xlsx');
 const { PrismaClient } = require('@prisma/client');
+const { exec } = require('child_process');
 
 // Get file path from command line arguments or use default
 const filePath = process.argv[2] || path.join(process.cwd(), 'import', 'data-10-06', 'DM_CoPhieuChonLoc.xlsx');
@@ -32,9 +33,60 @@ function parseFloatOrUndefined(value) {
 }
 
 /**
+ * Check and fix database connections if needed
+ */
+async function checkAndFixDatabaseConnections() {
+  return new Promise((resolve, reject) => {
+    console.log('Checking database connections...');
+    
+    // This command will list all PostgreSQL connections
+    exec('ps aux | grep postgres', (error, stdout, stderr) => {
+      if (error) {
+        console.warn('Could not check PostgreSQL connections:', error);
+        // Continue anyway
+        resolve();
+        return;
+      }
+      
+      console.log('Current PostgreSQL processes:');
+      console.log(stdout);
+      
+      // Attempt to restart the database service if you have permission
+      // This is commented out because it requires sudo privileges
+      // exec('sudo service postgresql restart', (error, stdout, stderr) => {
+      //   if (error) {
+      //     console.warn('Could not restart PostgreSQL:', error);
+      //   } else {
+      //     console.log('PostgreSQL restarted successfully');
+      //   }
+      //   resolve();
+      // });
+      
+      // Instead of restarting, we'll just wait a bit to let connections close naturally
+      console.log('Waiting for connections to close naturally...');
+      setTimeout(resolve, 5000); // Wait 5 seconds
+    });
+  });
+}
+
+/**
  * Import selected stocks from Excel file
  */
 async function importSelectedStocksFromExcel(filePath) {
+  // Check database connections before starting
+  await checkAndFixDatabaseConnections();
+  
+  // Create a single Prisma client instance
+  const prisma = new PrismaClient({
+    // Set connection limit
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+        connectionLimit: 5
+      }
+    }
+  });
+  
   try {
     console.log(`Reading file: ${filePath}`);
     
@@ -63,8 +115,8 @@ async function importSelectedStocksFromExcel(filePath) {
     let errorCount = 0;
     let duplicateCount = 0;
     
-    // Process data in batches to avoid too many connections
-    const BATCH_SIZE = 10;
+    // Process data in smaller batches
+    const BATCH_SIZE = 1; // Process one at a time to minimize connection issues
     const batches = [];
     
     for (let i = 0; i < data.length; i += BATCH_SIZE) {
@@ -72,9 +124,6 @@ async function importSelectedStocksFromExcel(filePath) {
     }
     
     for (const [batchIndex, batch] of batches.entries()) {
-      // Create a new Prisma client for each batch
-      const batchPrisma = new PrismaClient();
-      
       try {
         console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
         
@@ -97,45 +146,42 @@ async function importSelectedStocksFromExcel(filePath) {
               volume: parseFloatOrUndefined(row.volume || row.Volume || row['KL'] || row['Khối lượng']),
             };
             
-            // Check if the selected stock already exists
-            const existingStock = await batchPrisma.selectedStocks.findFirst({
-              where: {
-                symbol,
-              },
-            });
-            
-            if (existingStock) {
-              console.log(`Duplicate found for ${symbol}. Skipping.`);
-              duplicateCount++;
-              continue;
-            }
-
-            // Create the selected stock
+            // Use upsert instead of findFirst + create to reduce number of queries
             console.log(`Importing selected stock: ${symbol}`);
-            await batchPrisma.selectedStocks.create({
-              data: selectedStockData,
+            await prisma.selectedStocks.upsert({
+              where: { symbol },
+              update: selectedStockData,
+              create: selectedStockData,
             });
             
             successCount++;
           } catch (error) {
             console.error(`Error processing row:`, row, error);
             errorCount++;
+            
+            // If we encounter a connection error, wait a bit before continuing
+            if (error.message && error.message.includes('too many clients')) {
+              console.log('Connection limit reached. Waiting before continuing...');
+              await new Promise(resolve => setTimeout(resolve, 5000));
+            }
           }
         }
-      } finally {
-        // Make sure to disconnect the batch Prisma client
-        await batchPrisma.$disconnect();
+      } catch (error) {
+        console.error(`Error processing batch ${batchIndex + 1}:`, error);
       }
       
-      // Add a small delay between batches to allow connections to close
+      // Add a delay between batches
       if (batchIndex < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
     
     console.log(`Import completed: ${successCount} successful, ${duplicateCount} duplicates, ${errorCount} errors`);
   } catch (error) {
     console.error('Import failed:', error);
+  } finally {
+    // Close Prisma client connection
+    await prisma.$disconnect();
   }
 }
 
