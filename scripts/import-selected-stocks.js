@@ -51,17 +51,6 @@ async function checkAndFixDatabaseConnections() {
       console.log('Current PostgreSQL processes:');
       console.log(stdout);
       
-      // Attempt to restart the database service if you have permission
-      // This is commented out because it requires sudo privileges
-      // exec('sudo service postgresql restart', (error, stdout, stderr) => {
-      //   if (error) {
-      //     console.warn('Could not restart PostgreSQL:', error);
-      //   } else {
-      //     console.log('PostgreSQL restarted successfully');
-      //   }
-      //   resolve();
-      // });
-      
       // Instead of restarting, we'll just wait a bit to let connections close naturally
       console.log('Waiting for connections to close naturally...');
       setTimeout(resolve, 5000); // Wait 5 seconds
@@ -77,15 +66,7 @@ async function importSelectedStocksFromExcel(filePath) {
   await checkAndFixDatabaseConnections();
   
   // Create a single Prisma client instance
-  const prisma = new PrismaClient({
-    // Set connection limit
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-        connectionLimit: 5
-      }
-    }
-  });
+  const prisma = new PrismaClient();
   
   try {
     console.log(`Reading file: ${filePath}`);
@@ -115,68 +96,68 @@ async function importSelectedStocksFromExcel(filePath) {
     let errorCount = 0;
     let duplicateCount = 0;
     
-    // Process data in smaller batches
-    const BATCH_SIZE = 1; // Process one at a time to minimize connection issues
-    const batches = [];
-    
-    for (let i = 0; i < data.length; i += BATCH_SIZE) {
-      batches.push(data.slice(i, i + BATCH_SIZE));
-    }
-    
-    for (const [batchIndex, batch] of batches.entries()) {
+    // Process data one by one to minimize connection issues
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      
       try {
-        console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
+        console.log(`Processing item ${i + 1}/${data.length}`);
         
-        for (const row of batch) {
-          try {
-            // Extract selected stock data from row - updated to match Vietnamese column names in DM_CoPhieuChonLoc.xlsx
-            const symbol = (row.symbol || row.Symbol || row['Mã'] || row['Mã CP'] || row['Mã CK'] || '').toString().toUpperCase();
-            
-            // Skip rows without required data
-            if (!symbol) {
-              console.error('Skip row: Missing symbol', row);
-              errorCount++;
-              continue;
-            }
+        // Extract selected stock data from row - updated to match Vietnamese column names in DM_CoPhieuChonLoc.xlsx
+        const symbol = (row.symbol || row.Symbol || row['Mã'] || row['Mã CP'] || row['Mã CK'] || '').toString().toUpperCase();
+        
+        // Skip rows without required data
+        if (!symbol) {
+          console.error('Skip row: Missing symbol', row);
+          errorCount++;
+          continue;
+        }
 
-            const selectedStockData = {
-              symbol,
-              close: parseFloatOrUndefined(row.close || row.Close || row['Giá'] || row['Giá CP'] || row['Giá đóng cửa']),
-              return: parseFloatOrUndefined(row.return || row.Return || row['Lợi nhuận'] || row['LN']),
-              volume: parseFloatOrUndefined(row.volume || row.Volume || row['KL'] || row['Khối lượng']),
-            };
-            
-            // Use upsert instead of findFirst + create to reduce number of queries
-            console.log(`Importing selected stock: ${symbol}`);
-            await prisma.selectedStocks.upsert({
-              where: { symbol },
-              update: selectedStockData,
-              create: selectedStockData,
-            });
-            
-            successCount++;
-          } catch (error) {
-            console.error(`Error processing row:`, row, error);
-            errorCount++;
-            
-            // If we encounter a connection error, wait a bit before continuing
-            if (error.message && error.message.includes('too many clients')) {
-              console.log('Connection limit reached. Waiting before continuing...');
-              await new Promise(resolve => setTimeout(resolve, 5000));
-            }
-          }
+        const selectedStockData = {
+          symbol,
+          close: parseFloatOrUndefined(row.close || row.Close || row['Giá'] || row['Giá CP'] || row['Giá đóng cửa']),
+          return: parseFloatOrUndefined(row.return || row.Return || row['Lợi nhuận'] || row['LN']),
+          volume: parseFloatOrUndefined(row.volume || row.Volume || row['KL'] || row['Khối lượng']),
+        };
+        
+        // Check if the selected stock already exists
+        const existingStock = await prisma.selectedStocks.findFirst({
+          where: { symbol }
+        });
+        
+        if (existingStock) {
+          console.log(`Updating existing stock: ${symbol}`);
+          await prisma.selectedStocks.update({
+            where: { symbol },
+            data: selectedStockData
+          });
+          duplicateCount++;
+        } else {
+          // Create the selected stock
+          console.log(`Creating new stock: ${symbol}`);
+          await prisma.selectedStocks.create({
+            data: selectedStockData,
+          });
+          successCount++;
+        }
+        
+        // Add a small delay between operations
+        if (i < data.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       } catch (error) {
-        console.error(`Error processing batch ${batchIndex + 1}:`, error);
-      }
-      
-      // Add a delay between batches
-      if (batchIndex < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.error(`Error processing row:`, row, error);
+        errorCount++;
+        
+        // If we encounter a connection error, wait a bit before continuing
+        if (error.message && error.message.includes('too many clients')) {
+          console.log('Connection limit reached. Waiting before continuing...');
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
       }
     }
     
-    console.log(`Import completed: ${successCount} successful, ${duplicateCount} duplicates, ${errorCount} errors`);
+    console.log(`Import completed: ${successCount} new entries, ${duplicateCount} updated, ${errorCount} errors`);
   } catch (error) {
     console.error('Import failed:', error);
   } finally {
