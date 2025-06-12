@@ -119,6 +119,30 @@ export class SelectedStocksRepository {
     } as (ISelectedStocks & { stockInfo: any });
   }
 
+  async findBySymbolAndDate(symbol: string, date: Date): Promise<ISelectedStocks | null> {
+    // Convert the date to UTC and extract year, month, day
+    const targetDate = new Date(date);
+    
+    // Create the date range for comparison (beginning and end of the day)
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const item = await prisma.selectedStocks.findFirst({
+      where: {
+        symbol,
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay
+        }
+      }
+    });
+
+    return item as ISelectedStocks | null;
+  }
+
   async findTopByReturn(limit: number = 20): Promise<(ISelectedStocks & { stockInfo?: any })[]> {
     const items = await prisma.selectedStocks.findMany({
       orderBy: {

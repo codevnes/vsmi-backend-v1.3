@@ -10,6 +10,7 @@ export interface ISelectedStocks {
 
 export interface ISelectedStocksCreate {
   symbol: string;
+  date?: Date;
   close?: number | null;
   return?: number | null;
   volume?: number | null;
