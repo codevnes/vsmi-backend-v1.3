@@ -20,12 +20,12 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Get file path from command line arguments or use default
-const filePath = process.argv[2] || path.join(process.cwd(), 'import', 'selected-stocks', 'data.xlsx');
+const filePath = process.argv[2] || path.join(process.cwd(), 'import', 'data-10-06', 'DM_CoPhieuChonLoc.xlsx');
 
 /**
- * Parse a value to float or return null if invalid
+ * Parse a value to float or return undefined if invalid
  */
-function parseFloatOrNull(value) {
+function parseFloatOrUndefined(value) {
   if (value === undefined || value === null || value === '') {
     return null;
   }
@@ -68,57 +68,38 @@ async function importSelectedStocksFromExcel(filePath) {
     
     for (const row of data) {
       try {
-        // Extract selected stock data from row
-        const symbol = (row.symbol || row.Symbol || row.mã || row.Mã || row['Mã CK'] || '').toString().toUpperCase();
-        let dateValue = row.date || row.Date || row.ngày || row.Ngày || row['Ngày'];
+        // Extract selected stock data from row - updated to match Vietnamese column names in DM_CoPhieuChonLoc.xlsx
+        const symbol = (row.symbol || row.Symbol || row['Mã'] || row['Mã CP'] || row['Mã CK'] || '').toString().toUpperCase();
         
         // Skip rows without required data
-        if (!symbol || !dateValue) {
-          console.error('Skip row: Missing symbol or date', row);
+        if (!symbol) {
+          console.error('Skip row: Missing symbol', row);
           errorCount++;
           continue;
         }
 
-        // Convert date format if it's a string
-        let date;
-        if (dateValue instanceof Date) {
-          date = dateValue;
-        } else {
-          date = new Date(dateValue);
-          if (isNaN(date.getTime())) {
-            console.error(`Skip row: Invalid date format for ${symbol}:`, dateValue);
-            errorCount++;
-            continue;
-          }
-        }
-
         const selectedStockData = {
           symbol,
-          date,
-          close: parseFloatOrNull(row.close || row.Close || row.giá || row.Giá || row['Giá đóng cửa']),
-          return: parseFloatOrNull(row.return || row.Return || row['lợi nhuận'] || row['Lợi nhuận'] || row['Lợi Nhuận']),
-          qIndex: parseFloatOrNull(row.qIndex || row.QIndex || row['q-index'] || row['Q-Index'] || row['Chỉ số Q']),
-          volume: parseFloatOrNull(row.volume || row.Volume || row['khối lượng'] || row['Khối lượng'] || row['Khối Lượng']),
+          close: parseFloatOrUndefined(row.close || row.Close || row['Giá'] || row['Giá CP'] || row['Giá đóng cửa']),
+          return: parseFloatOrUndefined(row.return || row.Return || row['Lợi nhuận'] || row['LN']),
+          volume: parseFloatOrUndefined(row.volume || row.Volume || row['KL'] || row['Khối lượng']),
         };
         
         // Check if the selected stock already exists
-        const existingStock = await prisma.selectedStocks.findUnique({
+        const existingStock = await prisma.selectedStocks.findFirst({
           where: {
-            symbol_date: {
-              symbol,
-              date,
-            }
-          }
+            symbol,
+          },
         });
         
         if (existingStock) {
-          console.log(`Duplicate found for ${symbol} on ${date.toISOString().split('T')[0]}. Skipping.`);
+          console.log(`Duplicate found for ${symbol}. Skipping.`);
           duplicateCount++;
           continue;
         }
 
         // Create the selected stock
-        console.log(`Importing selected stock: ${symbol} on ${date.toISOString().split('T')[0]}`);
+        console.log(`Importing selected stock: ${symbol}`);
         await prisma.selectedStocks.create({
           data: selectedStockData,
         });
@@ -134,6 +115,7 @@ async function importSelectedStocksFromExcel(filePath) {
   } catch (error) {
     console.error('Import failed:', error);
   } finally {
+    // Close Prisma client connection
     await prisma.$disconnect();
   }
 }

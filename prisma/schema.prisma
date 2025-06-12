@@ -266,20 +266,15 @@ model StockProfile {
 
 model SelectedStocks {
   id        String   @id @default(uuid()) @db.Uuid
-  symbol    String   @db.VarChar(10)
-  date      DateTime @db.Date
+  symbol    String   @unique @db.VarChar(10)
   close     Float?
   return    Float?
-  qIndex    Float?
   volume    Float?
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   stock     Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
-  @@unique([symbol, date])
   @@index([symbol])
-  @@index([date])
-  @@index([qIndex])
 }
 
 model Transaction {
@@ -543,27 +538,27 @@ model TechnicalRecommendation {
 }
 
 model ChatGptAnalysis {
-  id                 String   @id @default(uuid()) @db.Uuid
+  id                    String   @id @default(uuid()) @db.Uuid
   /// Mã cổ phiếu (liên kết Stock.symbol)
-  symbol             String   @db.VarChar(10)
+  symbol                String   @db.VarChar(10)
   /// Ngày phân tích
-  analysisDate       DateTime @db.Date
+  analysisDate          DateTime @db.Date
   /// Dữ liệu gốc gửi đến ChatGPT
-  inputData          Json?
+  inputData             Json?
   /// Kết quả phân tích từ ChatGPT
-  analysisResult     String?  @db.Text
+  analysisResult        String?  @db.Text
   /// Khuyến nghị giao dịch (Mua, Bán, Quan sát, Không hành động)
-  tradingRecommendation String? @db.VarChar(50)
+  tradingRecommendation String?  @db.VarChar(50)
   /// Vùng giá mua đề xuất
-  suggestedBuyRange  String?  @db.VarChar(100)
+  suggestedBuyRange     String?  @db.VarChar(100)
   /// Mức cắt lỗ đề xuất
-  stopLossLevel      String?  @db.VarChar(100)
+  stopLossLevel         String?  @db.VarChar(100)
   /// Thời gian tạo
-  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
   /// Thời gian cập nhật gần nhất
-  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
   /// Liên kết với bảng Stock
-  stock              Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  stock                 Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@unique([symbol, analysisDate])
   @@index([symbol])
@@ -571,27 +566,27 @@ model ChatGptAnalysis {
 }
 
 model FScoreAnalysis {
-  id                 String   @id @default(uuid()) @db.Uuid
+  id                    String   @id @default(uuid()) @db.Uuid
   /// Mã cổ phiếu (liên kết Stock.symbol)
-  symbol             String   @db.VarChar(10)
+  symbol                String   @db.VarChar(10)
   /// Ngày phân tích
-  analysisDate       DateTime @db.Date
+  analysisDate          DateTime @db.Date
   /// Dữ liệu gốc gửi đến ChatGPT
-  inputData          Json?
+  inputData             Json?
   /// Kết quả phân tích từ ChatGPT
-  analysisResult     String?  @db.Text
+  analysisResult        String?  @db.Text
   /// Khuyến nghị đầu tư (Mua, Bán, Quan sát, Không hành động)
-  tradingRecommendation String? @db.VarChar(255)
+  tradingRecommendation String?  @db.VarChar(255)
   /// Vùng giá mua đề xuất
-  suggestedBuyRange  String?  @db.VarChar(255)
+  suggestedBuyRange     String?  @db.VarChar(255)
   /// Mức cắt lỗ đề xuất
-  stopLossLevel      String?  @db.VarChar(255)
+  stopLossLevel         String?  @db.VarChar(255)
   /// Thời gian tạo
-  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
   /// Thời gian cập nhật gần nhất
-  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
   /// Liên kết với bảng Stock
-  stock              Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  stock                 Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@unique([symbol, analysisDate])
   @@index([symbol])
@@ -599,16 +594,16 @@ model FScoreAnalysis {
 }
 
 model NewsArticle {
-  id            String    @id @default(uuid()) @db.Uuid
-  title         String    @db.VarChar(255)
-  url           String    @unique @db.VarChar(500)
-  originalContent String  @db.Text
-  summarizedContent String @db.Text
-  sourceWebsite String?   @db.VarChar(100)
-  symbol        String?   @db.VarChar(10)
-  publishedAt   DateTime? @db.Timestamptz(3)
-  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
+  id                String    @id @default(uuid()) @db.Uuid
+  title             String    @db.VarChar(255)
+  url               String    @unique @db.VarChar(500)
+  originalContent   String    @db.Text
+  summarizedContent String    @db.Text
+  sourceWebsite     String?   @db.VarChar(100)
+  symbol            String?   @db.VarChar(10)
+  publishedAt       DateTime? @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
 
   @@index([symbol])
   @@index([publishedAt])

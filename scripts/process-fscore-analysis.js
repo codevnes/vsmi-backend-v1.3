@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { Command } = require('commander');
 const inquirer = require('inquirer');
+const XLSX = require('xlsx');
 
 const prisma = new PrismaClient();
 const program = new Command();
@@ -12,22 +13,46 @@ const program = new Command();
 // API base URL from environment variable
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3030/api';
 // API token for authentication
-const API_TOKEN = process.env.API_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRhNGRiMDU4LTYyMjItNGU5NC04N2Q5LWU5ZDljNmY3MWFkMyIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc0OTM4NDc2MCwiZXhwIjoxNzQ5NDcxMTYwfQ.KE02wpDNhODALn8_M-R9f_MVQ5rRs4dYDQq4YQoHdso';
+const API_TOKEN = process.env.API_TOKEN;
+
+const FSCORE_DATA_PATH = path.join(process.cwd(), 'data-fscore', 'F_SCORE.xlsx');
 
 program
   .description('Process F-Score Analysis using ChatGPT')
   .option('-s, --symbol <symbol>', 'Process a specific stock symbol')
-  .option('-a, --all', 'Process all stocks')
-  .option('-l, --list', 'List all available stocks')
+  .option('-a, --all', 'Process all stocks with available F-Score data')
+  .option('-l, --list', 'List all available stocks with F-Score data')
+  .action(main)
   .parse(process.argv);
 
-const options = program.opts();
+async function getStocksFromFScoreFile() {
+  if (!fs.existsSync(FSCORE_DATA_PATH)) {
+    console.error(`F-Score data file not found at: ${FSCORE_DATA_PATH}`);
+    return [];
+  }
+  const workbook = XLSX.readFile(FSCORE_DATA_PATH);
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const data = XLSX.utils.sheet_to_json(worksheet);
+  return data.map(row => row.SYMBOL).filter(Boolean);
+}
 
 async function listStocks() {
   try {
-    console.log('Fetching all stocks...');
-    
+    console.log('Fetching stocks from F-Score data file...');
+    const symbols = await getStocksFromFScoreFile();
+
+    if (symbols.length === 0) {
+      console.log('No stocks found in the F-Score data file.');
+      return;
+    }
+
     const stocks = await prisma.stock.findMany({
+      where: {
+        symbol: {
+          in: symbols
+        }
+      },
       select: {
         symbol: true,
         name: true,
@@ -38,7 +63,7 @@ async function listStocks() {
       }
     });
     
-    console.log(`Found ${stocks.length} stocks`);
+    console.log(`Found ${stocks.length} stocks with F-Score data`);
     
     const tableData = stocks.map(stock => ({
       Symbol: stock.symbol,
@@ -98,22 +123,22 @@ async function processSingleStock(symbol) {
 
 async function processAllStocks() {
   try {
-    console.log('Fetching all stocks...');
+    console.log('Fetching stocks from F-Score data file...');
+    const symbols = await getStocksFromFScoreFile();
     
-    const stocks = await prisma.stock.findMany({
-      select: {
-        symbol: true
-      }
-    });
-    
-    console.log(`Found ${stocks.length} stocks to process`);
+    if (symbols.length === 0) {
+      console.log('No stocks found in F-Score data file to process.');
+      return;
+    }
+
+    console.log(`Found ${symbols.length} stocks to process`);
     
     // Ask for confirmation before proceeding
     const { confirm } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'confirm',
-        message: `Are you sure you want to process F-Score analysis for all ${stocks.length} stocks? This may take a long time and consume API credits.`,
+        message: `Are you sure you want to process F-Score analysis for all ${symbols.length} stocks from the data file? This may take a long time and consume API credits.`,
         default: false
       }
     ]);
@@ -124,7 +149,6 @@ async function processAllStocks() {
     }
     
     // Prepare batch request data
-    const symbols = stocks.map(stock => stock.symbol);
     
     // Create headers with authorization token if available
     const headers = {
@@ -186,7 +210,7 @@ async function processAllStocks() {
   }
 }
 
-async function main() {
+async function main(options) {
   console.log('===== F-SCORE ANALYSIS PROCESSOR =====');
   
   if (options.list) {
@@ -240,8 +264,8 @@ async function main() {
   await prisma.$disconnect();
 }
 
-main().catch(async (e) => {
-  console.error(e);
-  await prisma.$disconnect();
-  process.exit(1);
-}); 
+// main().catch(async (e) => {
+//   console.error(e);
+//   await prisma.$disconnect();
+//   process.exit(1);
+// }); 

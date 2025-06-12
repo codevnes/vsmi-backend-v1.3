@@ -1,179 +1,216 @@
-import { PrismaClient } from '@prisma/client';
 import { ISelectedStocks, ISelectedStocksCreate, ISelectedStocksUpdate, IPaginationOptions, IPaginationResult } from '../models';
 import { prisma } from '../app';
+import { bigIntSerializer } from '../utils/helpers';
 
 export class SelectedStocksRepository {
-  constructor(private readonly prismaClient: PrismaClient = prisma) {}
+  constructor() {}
 
-  async findAll(options?: IPaginationOptions): Promise<IPaginationResult<ISelectedStocks>> {
+  async findAll(options?: IPaginationOptions): Promise<IPaginationResult<ISelectedStocks & { stockPrices?: any[], stockInfo?: any }>> {
     const {
       page = 1,
       limit = 10,
-      sort = 'date',
-      order = 'desc',
+      sort = 'symbol',
+      order = 'asc',
     } = options || {};
 
     const skip = (page - 1) * limit;
     const take = limit;
 
-    const [items, count] = await Promise.all([
-      this.prismaClient.selectedStocks.findMany({
-        skip,
-        take,
-        orderBy: {
-          [sort]: order,
+    try {
+      // Calculate the date 3 months ago from today
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+      const [items, count] = await Promise.all([
+        prisma.selectedStocks.findMany({
+          skip,
+          take,
+          orderBy: {
+            [sort]: order,
+          },
+          include: {
+            stock: {
+              select: {
+                id: true,
+                symbol: true,
+                name: true,
+                exchange: true,
+                industry: true,
+                stockPrices: {
+                  where: {
+                    date: {
+                      gte: threeMonthsAgo
+                    }
+                  },
+                  orderBy: {
+                    date: 'desc'
+                  },
+                  select: {
+                    date: true,
+                    close: true
+                  }
+                }
+              }
+            }
+          }
+        }),
+        prisma.selectedStocks.count(),
+      ]);
+
+      const totalPages = Math.ceil(count / limit);
+
+      // Map the results to include stock info and stock prices and convert BigInt values
+      const mappedItems = items.map(item => {
+        const { stock, ...rest } = item;
+        const { stockPrices, ...stockInfo } = stock || { stockPrices: [], symbol: rest.symbol };
+        
+        return {
+          ...rest,
+          stockInfo,
+          stockPrices: stockPrices || []
+        };
+      });
+
+      return {
+        data: bigIntSerializer(mappedItems) as (ISelectedStocks & { stockPrices: any[], stockInfo: any })[],
+        pagination: {
+          page,
+          limit,
+          totalItems: count,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
         },
-      }),
-      this.prismaClient.selectedStocks.count(),
-    ]);
-
-    const totalPages = Math.ceil(count / limit);
-
-    return {
-      data: items as ISelectedStocks[],
-      pagination: {
-        page,
-        limit,
-        totalItems: count,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      },
-    };
+      };
+    } catch (error) {
+      console.error('Error in findAll:', error);
+      throw error;
+    }
   }
 
-  async findBySymbol(symbol: string, options?: IPaginationOptions): Promise<IPaginationResult<ISelectedStocks>> {
-    const {
-      page = 1,
-      limit = 10,
-      sort = 'date',
-      order = 'desc',
-    } = options || {};
-
-    const skip = (page - 1) * limit;
-    const take = limit;
-
-    const [items, count] = await Promise.all([
-      this.prismaClient.selectedStocks.findMany({
-        where: {
-          symbol,
-        },
-        skip,
-        take,
-        orderBy: {
-          [sort]: order,
-        },
-      }),
-      this.prismaClient.selectedStocks.count({
-        where: {
-          symbol,
-        },
-      }),
-    ]);
-
-    const totalPages = Math.ceil(count / limit);
-
-    return {
-      data: items as ISelectedStocks[],
-      pagination: {
-        page,
-        limit,
-        totalItems: count,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      },
-    };
-  }
-
-  async findByDate(date: Date): Promise<ISelectedStocks[]> {
-    const items = await this.prismaClient.selectedStocks.findMany({
+  async findBySymbol(symbol: string): Promise<(ISelectedStocks & { stockInfo?: any }) | null> {
+    const item = await prisma.selectedStocks.findFirst({
       where: {
-        date,
+        symbol
       },
-      orderBy: {
-        qIndex: 'desc',
-      },
+      include: {
+        stock: {
+          select: {
+            id: true,
+            symbol: true,
+            name: true,
+            exchange: true,
+            industry: true,
+            description: true,
+            profile: true,
+          }
+        }
+      }
     });
 
-    return items as ISelectedStocks[];
-  }
-
-  async findTopByQIndex(limit: number = 20, startDate?: Date, endDate?: Date): Promise<ISelectedStocks[]> {
-    const dateFilter = {};
-    
-    if (startDate && endDate) {
-      Object.assign(dateFilter, {
-        gte: startDate,
-        lte: endDate,
-      });
-    } else if (startDate) {
-      Object.assign(dateFilter, {
-        gte: startDate,
-      });
-    } else if (endDate) {
-      Object.assign(dateFilter, {
-        lte: endDate,
-      });
+    if (!item) {
+      return null;
     }
 
-    const whereClause = Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {};
-
-    const items = await this.prismaClient.selectedStocks.findMany({
-      where: whereClause,
-      orderBy: {
-        qIndex: 'desc',
-      },
-      take: limit,
-    });
-
-    return items as ISelectedStocks[];
+    const { stock, ...rest } = item;
+    return {
+      ...rest,
+      stockInfo: stock || { symbol: rest.symbol }
+    } as (ISelectedStocks & { stockInfo: any });
   }
 
-  async findById(id: string): Promise<ISelectedStocks | null> {
-    const item = await this.prismaClient.selectedStocks.findUnique({
+  async findTopByReturn(limit: number = 20): Promise<(ISelectedStocks & { stockInfo?: any })[]> {
+    const items = await prisma.selectedStocks.findMany({
+      orderBy: {
+        return: 'desc',
+      },
+      take: limit,
+      include: {
+        stock: {
+          select: {
+            id: true,
+            symbol: true,
+            name: true,
+            exchange: true,
+            industry: true,
+          }
+        }
+      }
+    });
+
+    // Map the results to include stock info
+    return items.map(item => {
+      const { stock, ...rest } = item;
+      return {
+        ...rest,
+        stockInfo: stock || { symbol: rest.symbol }
+      };
+    }) as (ISelectedStocks & { stockInfo: any })[];
+  }
+
+  async findById(id: string): Promise<(ISelectedStocks & { stockInfo?: any }) | null> {
+    const item = await prisma.selectedStocks.findUnique({
       where: {
         id,
       },
+      include: {
+        stock: {
+          select: {
+            id: true,
+            symbol: true,
+            name: true,
+            exchange: true,
+            industry: true,
+            description: true,
+            profile: true,
+          }
+        }
+      }
     });
 
-    return item as ISelectedStocks | null;
-  }
+    if (!item) {
+      return null;
+    }
 
-  async findBySymbolAndDate(symbol: string, date: Date): Promise<ISelectedStocks | null> {
-    const item = await this.prismaClient.selectedStocks.findUnique({
-      where: {
-        symbol_date: {
-          symbol,
-          date,
-        },
-      },
-    });
-
-    return item as ISelectedStocks | null;
+    const { stock, ...rest } = item;
+    return {
+      ...rest,
+      stockInfo: stock || { symbol: rest.symbol }
+    } as (ISelectedStocks & { stockInfo: any });
   }
 
   async create(data: ISelectedStocksCreate): Promise<ISelectedStocks> {
-    const item = await this.prismaClient.selectedStocks.create({
-      data,
+    // Create a valid data object for Prisma
+    const item = await prisma.selectedStocks.create({
+      data: {
+        symbol: data.symbol,
+        close: data.close ?? null,
+        return: data.return ?? null,
+        volume: data.volume ?? null,
+      },
     });
 
     return item as ISelectedStocks;
   }
 
   async update(id: string, data: ISelectedStocksUpdate): Promise<ISelectedStocks> {
-    const item = await this.prismaClient.selectedStocks.update({
+    const item = await prisma.selectedStocks.update({
       where: {
         id,
       },
-      data,
+      data: {
+        symbol: data.symbol,
+        close: data.close,
+        return: data.return,
+        volume: data.volume
+      },
     });
 
     return item as ISelectedStocks;
   }
 
   async delete(id: string): Promise<ISelectedStocks> {
-    const item = await this.prismaClient.selectedStocks.delete({
+    const item = await prisma.selectedStocks.delete({
       where: {
         id,
       },
@@ -183,7 +220,7 @@ export class SelectedStocksRepository {
   }
 
   async deleteMany(ids: string[]): Promise<number> {
-    const result = await this.prismaClient.selectedStocks.deleteMany({
+    const result = await prisma.selectedStocks.deleteMany({
       where: {
         id: {
           in: ids,

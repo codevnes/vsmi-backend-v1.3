@@ -2,8 +2,7 @@ import { Router } from 'express';
 import {
   getAllSelectedStocks,
   getSelectedStocksBySymbol,
-  getSelectedStocksByDate,
-  getTopSelectedStocksByQIndex,
+  getTopSelectedStocksByReturn,
   getSelectedStockById,
   createSelectedStock,
   updateSelectedStock,
@@ -19,13 +18,10 @@ const router = Router();
 // GET /api/selected-stocks - Get all selected stocks with pagination
 router.get('/', getAllSelectedStocks as AsyncRequestHandler);
 
-// GET /api/selected-stocks/top - Get top selected stocks by Q-Index
-router.get('/top', getTopSelectedStocksByQIndex as AsyncRequestHandler);
+// GET /api/selected-stocks/top - Get top selected stocks by Return
+router.get('/top', getTopSelectedStocksByReturn as AsyncRequestHandler);
 
-// GET /api/selected-stocks/date/:date - Get selected stocks by date
-router.get('/date/:date', getSelectedStocksByDate as AsyncRequestHandler);
-
-// GET /api/selected-stocks/symbol/:symbol - Get selected stocks by symbol with pagination
+// GET /api/selected-stocks/symbol/:symbol - Get selected stock by symbol
 router.get('/symbol/:symbol', getSelectedStocksBySymbol as AsyncRequestHandler);
 
 // GET /api/selected-stocks/:id - Get a selected stock by ID

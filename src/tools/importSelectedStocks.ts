@@ -24,7 +24,6 @@ interface SelectedStockRow {
   date?: string | Date;
   close?: number | string;
   return?: number | string;
-  qIndex?: number | string;
   volume?: number | string;
   [key: string]: any;
 }
@@ -64,9 +63,9 @@ async function importSelectedStocksFromExcel(filePath: string): Promise<void> {
     
     for (const row of data) {
       try {
-        // Extract selected stock data from row
-        const symbol = (row.symbol || row.Symbol || row.mã || row.Mã || row['Mã CK'] || '').toString().toUpperCase();
-        let dateValue = row.date || row.Date || row.ngày || row.Ngày || row['Ngày'];
+        // Extract selected stock data from row - updated to match Vietnamese column names in DM_CoPhieuChonLoc.xlsx
+        const symbol = (row.symbol || row.Symbol || row['Mã'] || row['Mã CP'] || row['Mã CK'] || '').toString().toUpperCase();
+        let dateValue = row.date || row.Date || row['Ngày'] || row['Ngày CP'];
         
         // Skip rows without required data
         if (!symbol || !dateValue) {
@@ -91,10 +90,9 @@ async function importSelectedStocksFromExcel(filePath: string): Promise<void> {
         const selectedStockData: ISelectedStocksCreate = {
           symbol,
           date,
-          close: parseFloatOrUndefined(row.close || row.Close || row.giá || row.Giá || row['Giá đóng cửa']),
-          return: parseFloatOrUndefined(row.return || row.Return || row['lợi nhuận'] || row['Lợi nhuận'] || row['Lợi Nhuận']),
-          qIndex: parseFloatOrUndefined(row.qIndex || row.QIndex || row['q-index'] || row['Q-Index'] || row['Chỉ số Q']),
-          volume: parseFloatOrUndefined(row.volume || row.Volume || row['khối lượng'] || row['Khối lượng'] || row['Khối Lượng']),
+          close: parseFloatOrUndefined(row.close || row.Close || row['Giá'] || row['Giá CP'] || row['Giá đóng cửa']),
+          return: parseFloatOrUndefined(row.return || row.Return || row['Lợi nhuận'] || row['LN']),
+          volume: parseFloatOrUndefined(row.volume || row.Volume || row['KL'] || row['Khối lượng']),
         };
         
         // Check if the selected stock already exists
@@ -127,7 +125,7 @@ async function importSelectedStocksFromExcel(filePath: string): Promise<void> {
  * Main function to run the import
  */
 export async function importSelectedStocks(filePath?: string): Promise<void> {
-  const importFilePath = filePath || path.join(process.cwd(), 'import', 'selected-stocks', 'data.xlsx');
+  const importFilePath = filePath || path.join(process.cwd(), 'import', 'data-10-06', 'DM_CoPhieuChonLoc.xlsx');
   await importSelectedStocksFromExcel(importFilePath);
 }
 

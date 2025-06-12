@@ -1,2 +1,9 @@
 2025-06-09 15:22:00 - USER: vudinhloi - ACTION: Backup database 'vsmi' to file './backups/vsmi_20250609_152158.dump.gz'
 2025-06-09 15:22:03 - USER: vudinhloi - ACTION: Exited tool.
+2025-06-11 15:00:50 - USER: vudinhloi - ACTION: Restored database 'vsmi' from file './backups/vsmi_db_20250610_174001.dump.gz'
+2025-06-11 15:00:55 - USER: vudinhloi - ACTION: Exited tool.
+2025-06-11 15:17:47 - USER: vudinhloi - ACTION: Restored database 'vsmi' from file './backups/vsmi_db_20250610_174001.dump.gz'
+2025-06-12 16:23:31 - USER: vudinhloi - ACTION: Truncated table 'FScoreAnalysis' in database 'vsmi'
+2025-06-12 16:49:09 - USER: vudinhloi - ACTION: Exited tool.
+2025-06-12 17:40:11 - USER: vudinhloi - ACTION: Backup database 'vsmi' to file './backups/vsmi_20250612_174009.dump.gz'
+2025-06-12 17:40:13 - USER: vudinhloi - ACTION: Exited tool.
