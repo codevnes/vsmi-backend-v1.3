@@ -76,6 +76,32 @@ download_file() {
     return 1
 }
 
+# Function để khắc phục lỗi "Too many database connections"
+fix_db_connections() {
+    # Kiểm tra quyền sudo
+    if [ "$EUID" -ne 0 ]; then
+        warning "Cần quyền sudo để khởi động lại dịch vụ PostgreSQL."
+        echo -e "Vui lòng nhập mật khẩu sudo nếu được yêu cầu."
+    fi
+    
+    echo -e "Đang khởi động lại dịch vụ PostgreSQL để giải phóng kết nối..."
+    
+    # Thử các dịch vụ PostgreSQL phổ biến
+    if sudo systemctl restart postgresql 2>/dev/null; then
+        success "Đã khởi động lại dịch vụ PostgreSQL thành công."
+    elif sudo service postgresql restart 2>/dev/null; then
+        success "Đã khởi động lại dịch vụ PostgreSQL thành công."
+    elif sudo /etc/init.d/postgresql restart 2>/dev/null; then
+        success "Đã khởi động lại dịch vụ PostgreSQL thành công."
+    else
+        warning "Không thể khởi động lại dịch vụ PostgreSQL tự động. Vui lòng khởi động lại thủ công nếu gặp lỗi kết nối."
+    fi
+    
+    # Chờ một chút để dịch vụ khởi động hoàn tất
+    echo -e "Đợi dịch vụ PostgreSQL khởi động..."
+    sleep 3
+}
+
 # Kiểm tra xem package.json có tồn tại không để đảm bảo chúng ta đang ở thư mục dự án
 if [ ! -f "package.json" ]; then
     error "Không tìm thấy file package.json. Vui lòng chạy script này từ thư mục gốc của dự án."
@@ -183,6 +209,14 @@ fi
 
 # Hiển thị thông tin import
 echo -e "${YELLOW}Bắt đầu import dữ liệu ${BLUE}$data_name${YELLOW} từ file ${BLUE}$file_input${NC}"
+
+# Hỏi người dùng có muốn khắc phục lỗi kết nối cơ sở dữ liệu không
+echo -e "${YELLOW}Bạn có muốn khởi động lại dịch vụ PostgreSQL trước khi import để tránh lỗi 'Too many connections'? (y/n)${NC}"
+read -p "> " fix_connections_choice
+
+if [ "$fix_connections_choice" = "y" ] || [ "$fix_connections_choice" = "Y" ]; then
+    fix_db_connections
+fi
 
 # Thực hiện import
 if [ $data_type -eq 9 ]; then
