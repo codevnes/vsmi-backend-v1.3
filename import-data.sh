@@ -38,68 +38,23 @@ check_file() {
     fi
 }
 
-# Function để kiểm tra xem input có phải là URL không
-is_url() {
-    if [[ $1 =~ ^https?:// ]]; then
-        return 0 # true
-    else
-        return 1 # false
-    fi
-}
-
 # Function để tải file từ URL
 download_file() {
-    local url=$1
-    local temp_file=$(mktemp)
+    local url="$1"
+    local output_file="$2"
     
-    echo -e "Đang tải file từ URL: ${BLUE}$url${NC}" >&2
+    echo -e "Đang tải file từ URL: ${BLUE}$url${NC}"
     
-    # Thử tải bằng curl nếu có
+    # Kiểm tra xem curl có tồn tại không
     if command -v curl &> /dev/null; then
-        if curl -L --fail "$url" -o "$temp_file" 2>/dev/null; then
-            echo -e "Đã tải file ${GREEN}thành công${NC}" >&2
-            echo "$temp_file"
-            return 0
-        fi
-    # Hoặc thử tải bằng wget
+        curl -L -o "$output_file" "$url" || error "Không thể tải file từ URL"
     elif command -v wget &> /dev/null; then
-        if wget -q "$url" -O "$temp_file" 2>/dev/null; then
-            echo -e "Đã tải file ${GREEN}thành công${NC}" >&2
-            echo "$temp_file"
-            return 0
-        fi
-    fi
-    
-    # Nếu cả hai đều thất bại hoặc không có
-    rm -f "$temp_file"
-    error "Không thể tải file từ URL: $url"
-    return 1
-}
-
-# Function để khắc phục lỗi "Too many database connections"
-fix_db_connections() {
-    # Kiểm tra quyền sudo
-    if [ "$EUID" -ne 0 ]; then
-        warning "Cần quyền sudo để khởi động lại dịch vụ PostgreSQL."
-        echo -e "Vui lòng nhập mật khẩu sudo nếu được yêu cầu."
-    fi
-    
-    echo -e "Đang khởi động lại dịch vụ PostgreSQL để giải phóng kết nối..."
-    
-    # Thử các dịch vụ PostgreSQL phổ biến
-    if sudo systemctl restart postgresql 2>/dev/null; then
-        success "Đã khởi động lại dịch vụ PostgreSQL thành công."
-    elif sudo service postgresql restart 2>/dev/null; then
-        success "Đã khởi động lại dịch vụ PostgreSQL thành công."
-    elif sudo /etc/init.d/postgresql restart 2>/dev/null; then
-        success "Đã khởi động lại dịch vụ PostgreSQL thành công."
+        wget -O "$output_file" "$url" || error "Không thể tải file từ URL"
     else
-        warning "Không thể khởi động lại dịch vụ PostgreSQL tự động. Vui lòng khởi động lại thủ công nếu gặp lỗi kết nối."
+        error "Không tìm thấy curl hoặc wget. Vui lòng cài đặt một trong hai công cụ để tải file."
     fi
     
-    # Chờ một chút để dịch vụ khởi động hoàn tất
-    echo -e "Đợi dịch vụ PostgreSQL khởi động..."
-    sleep 3
+    success "Đã tải file thành công: $output_file"
 }
 
 # Kiểm tra xem package.json có tồn tại không để đảm bảo chúng ta đang ở thư mục dự án
@@ -123,9 +78,41 @@ echo -e "  ${BLUE}9.${NC} Kiểm tra cấu trúc file Excel"
 echo -e "${YELLOW}Vui lòng chọn loại dữ liệu để import (1-9):${NC}"
 read -p "> " data_type
 
-# Yêu cầu người dùng nhập đường dẫn đến file hoặc URL
-echo -e "${YELLOW}Nhập đường dẫn đến file Excel hoặc URL (để trống để sử dụng file mặc định):${NC}"
-read -p "> " file_input
+# Yêu cầu người dùng chọn nguồn dữ liệu
+echo -e "${YELLOW}Chọn nguồn dữ liệu:${NC}"
+echo -e "  ${BLUE}1.${NC} File từ máy tính"
+echo -e "  ${BLUE}2.${NC} Tải từ URL"
+read -p "> " source_type
+
+is_url=false
+downloaded_file=""
+
+# Xử lý nguồn dữ liệu
+if [ "$source_type" == "2" ]; then
+    echo -e "${YELLOW}Nhập URL của file Excel:${NC}"
+    read -p "> " file_url
+    
+    if [ -z "$file_url" ]; then
+        error "URL không được để trống."
+    fi
+    
+    # Tạo tên file tạm thời dựa trên timestamp
+    timestamp=$(date +%s)
+    downloaded_file="import/temp_${timestamp}.xlsx"
+    
+    # Đảm bảo thư mục import tồn tại
+    mkdir -p import
+    
+    # Tải file từ URL
+    download_file "$file_url" "$downloaded_file"
+    
+    file_path=$downloaded_file
+    is_url=true
+else
+    # Yêu cầu người dùng nhập đường dẫn đến file
+    echo -e "${YELLOW}Nhập đường dẫn đến file Excel (để trống để sử dụng file mặc định):${NC}"
+    read -p "> " file_path
+fi
 
 # Xử lý loại dữ liệu và đường dẫn file
 case $data_type in
@@ -179,44 +166,25 @@ case $data_type in
         ;;
 esac
 
-# Biến để theo dõi nếu chúng ta sử dụng file tạm
-temp_file=""
-
-# Nếu người dùng không nhập đường dẫn, sử dụng file mặc định
-if [ -z "$file_input" ]; then
+# Nếu người dùng không nhập đường dẫn và không phải import từ URL, sử dụng file mặc định
+if [ -z "$file_path" ] && [ "$is_url" == "false" ]; then
     if [ $data_type -eq 9 ]; then
-        echo -e "${YELLOW}Vui lòng nhập đường dẫn đến file Excel hoặc URL cần kiểm tra:${NC}"
-        read -p "> " file_input
-        if [ -z "$file_input" ]; then
-            error "Bạn phải nhập đường dẫn đến file hoặc URL cho tính năng kiểm tra cấu trúc."
+        echo -e "${YELLOW}Vui lòng nhập đường dẫn đến file Excel cần kiểm tra:${NC}"
+        read -p "> " file_path
+        if [ -z "$file_path" ]; then
+            error "Bạn phải nhập đường dẫn đến file cho tính năng kiểm tra cấu trúc."
         fi
     else
-        file_input=$default_file
-        echo -e "Sử dụng file mặc định: ${BLUE}$file_input${NC}"
+        file_path=$default_file
+        echo -e "Sử dụng file mặc định: ${BLUE}$file_path${NC}"
     fi
 fi
 
-# Xử lý file input, kiểm tra xem đó là URL hay đường dẫn local
-if is_url "$file_input"; then
-    # Nếu là URL, tải về file tạm
-    temp_file=$(download_file "$file_input")
-    file_path=$temp_file
-else
-    # Nếu là đường dẫn local, kiểm tra xem file có tồn tại không
-    file_path=$file_input
-    check_file "$file_path"
-fi
+# Kiểm tra xem file có tồn tại không
+check_file "$file_path"
 
 # Hiển thị thông tin import
-echo -e "${YELLOW}Bắt đầu import dữ liệu ${BLUE}$data_name${YELLOW} từ file ${BLUE}$file_input${NC}"
-
-# Hỏi người dùng có muốn khắc phục lỗi kết nối cơ sở dữ liệu không
-echo -e "${YELLOW}Bạn có muốn khởi động lại dịch vụ PostgreSQL trước khi import để tránh lỗi 'Too many connections'? (y/n)${NC}"
-read -p "> " fix_connections_choice
-
-if [ "$fix_connections_choice" = "y" ] || [ "$fix_connections_choice" = "Y" ]; then
-    fix_db_connections
-fi
+echo -e "${YELLOW}Bắt đầu import dữ liệu ${BLUE}$data_name${YELLOW} từ file ${BLUE}$file_path${NC}"
 
 # Thực hiện import
 if [ $data_type -eq 9 ]; then
@@ -247,10 +215,17 @@ else
     fi
 fi
 
-# Dọn dẹp file tạm nếu có
-if [ -n "$temp_file" ] && [ -f "$temp_file" ]; then
-    rm -f "$temp_file"
-    echo -e "Đã xóa file tạm thời."
+# Nếu file đã được tải từ URL, hỏi người dùng có muốn giữ lại file hay không
+if [ "$is_url" == "true" ] && [ -f "$downloaded_file" ]; then
+    echo -e "${YELLOW}Bạn có muốn giữ lại file đã tải không? (y/n)${NC}"
+    read -p "> " keep_file
+    
+    if [ "$keep_file" != "y" ] && [ "$keep_file" != "Y" ]; then
+        rm -f "$downloaded_file"
+        success "Đã xóa file tạm: $downloaded_file"
+    else
+        success "Đã giữ lại file tại: $downloaded_file"
+    fi
 fi
 
 echo -e "${BLUE}=================================${NC}"
