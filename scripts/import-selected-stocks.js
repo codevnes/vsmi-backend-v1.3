@@ -16,9 +16,6 @@ const path = require('path');
 const XLSX = require('xlsx');
 const { PrismaClient } = require('@prisma/client');
 
-// Initialize Prisma client
-const prisma = new PrismaClient();
-
 // Get file path from command line arguments or use default
 const filePath = process.argv[2] || path.join(process.cwd(), 'import', 'data-10-06', 'DM_CoPhieuChonLoc.xlsx');
 
@@ -66,57 +63,79 @@ async function importSelectedStocksFromExcel(filePath) {
     let errorCount = 0;
     let duplicateCount = 0;
     
-    for (const row of data) {
+    // Process data in batches to avoid too many connections
+    const BATCH_SIZE = 10;
+    const batches = [];
+    
+    for (let i = 0; i < data.length; i += BATCH_SIZE) {
+      batches.push(data.slice(i, i + BATCH_SIZE));
+    }
+    
+    for (const [batchIndex, batch] of batches.entries()) {
+      // Create a new Prisma client for each batch
+      const batchPrisma = new PrismaClient();
+      
       try {
-        // Extract selected stock data from row - updated to match Vietnamese column names in DM_CoPhieuChonLoc.xlsx
-        const symbol = (row.symbol || row.Symbol || row['Mã'] || row['Mã CP'] || row['Mã CK'] || '').toString().toUpperCase();
+        console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
         
-        // Skip rows without required data
-        if (!symbol) {
-          console.error('Skip row: Missing symbol', row);
-          errorCount++;
-          continue;
-        }
+        for (const row of batch) {
+          try {
+            // Extract selected stock data from row - updated to match Vietnamese column names in DM_CoPhieuChonLoc.xlsx
+            const symbol = (row.symbol || row.Symbol || row['Mã'] || row['Mã CP'] || row['Mã CK'] || '').toString().toUpperCase();
+            
+            // Skip rows without required data
+            if (!symbol) {
+              console.error('Skip row: Missing symbol', row);
+              errorCount++;
+              continue;
+            }
 
-        const selectedStockData = {
-          symbol,
-          close: parseFloatOrUndefined(row.close || row.Close || row['Giá'] || row['Giá CP'] || row['Giá đóng cửa']),
-          return: parseFloatOrUndefined(row.return || row.Return || row['Lợi nhuận'] || row['LN']),
-          volume: parseFloatOrUndefined(row.volume || row.Volume || row['KL'] || row['Khối lượng']),
-        };
-        
-        // Check if the selected stock already exists
-        const existingStock = await prisma.selectedStocks.findFirst({
-          where: {
-            symbol,
-          },
-        });
-        
-        if (existingStock) {
-          console.log(`Duplicate found for ${symbol}. Skipping.`);
-          duplicateCount++;
-          continue;
-        }
+            const selectedStockData = {
+              symbol,
+              close: parseFloatOrUndefined(row.close || row.Close || row['Giá'] || row['Giá CP'] || row['Giá đóng cửa']),
+              return: parseFloatOrUndefined(row.return || row.Return || row['Lợi nhuận'] || row['LN']),
+              volume: parseFloatOrUndefined(row.volume || row.Volume || row['KL'] || row['Khối lượng']),
+            };
+            
+            // Check if the selected stock already exists
+            const existingStock = await batchPrisma.selectedStocks.findFirst({
+              where: {
+                symbol,
+              },
+            });
+            
+            if (existingStock) {
+              console.log(`Duplicate found for ${symbol}. Skipping.`);
+              duplicateCount++;
+              continue;
+            }
 
-        // Create the selected stock
-        console.log(`Importing selected stock: ${symbol}`);
-        await prisma.selectedStocks.create({
-          data: selectedStockData,
-        });
-        
-        successCount++;
-      } catch (error) {
-        console.error(`Error processing row:`, row, error);
-        errorCount++;
+            // Create the selected stock
+            console.log(`Importing selected stock: ${symbol}`);
+            await batchPrisma.selectedStocks.create({
+              data: selectedStockData,
+            });
+            
+            successCount++;
+          } catch (error) {
+            console.error(`Error processing row:`, row, error);
+            errorCount++;
+          }
+        }
+      } finally {
+        // Make sure to disconnect the batch Prisma client
+        await batchPrisma.$disconnect();
+      }
+      
+      // Add a small delay between batches to allow connections to close
+      if (batchIndex < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
     
     console.log(`Import completed: ${successCount} successful, ${duplicateCount} duplicates, ${errorCount} errors`);
   } catch (error) {
     console.error('Import failed:', error);
-  } finally {
-    // Close Prisma client connection
-    await prisma.$disconnect();
   }
 }
 
