@@ -38,6 +38,44 @@ check_file() {
     fi
 }
 
+# Function để kiểm tra xem input có phải là URL không
+is_url() {
+    if [[ $1 =~ ^https?:// ]]; then
+        return 0 # true
+    else
+        return 1 # false
+    fi
+}
+
+# Function để tải file từ URL
+download_file() {
+    local url=$1
+    local temp_file=$(mktemp)
+    
+    echo -e "Đang tải file từ URL: ${BLUE}$url${NC}"
+    
+    # Thử tải bằng curl nếu có
+    if command -v curl &> /dev/null; then
+        if curl -L --fail "$url" -o "$temp_file" 2>/dev/null; then
+            echo -e "Đã tải file ${GREEN}thành công${NC}"
+            echo "$temp_file"
+            return 0
+        fi
+    # Hoặc thử tải bằng wget
+    elif command -v wget &> /dev/null; then
+        if wget -q "$url" -O "$temp_file" 2>/dev/null; then
+            echo -e "Đã tải file ${GREEN}thành công${NC}"
+            echo "$temp_file"
+            return 0
+        fi
+    fi
+    
+    # Nếu cả hai đều thất bại hoặc không có
+    rm -f "$temp_file"
+    error "Không thể tải file từ URL: $url"
+    return 1
+}
+
 # Kiểm tra xem package.json có tồn tại không để đảm bảo chúng ta đang ở thư mục dự án
 if [ ! -f "package.json" ]; then
     error "Không tìm thấy file package.json. Vui lòng chạy script này từ thư mục gốc của dự án."
@@ -59,9 +97,9 @@ echo -e "  ${BLUE}9.${NC} Kiểm tra cấu trúc file Excel"
 echo -e "${YELLOW}Vui lòng chọn loại dữ liệu để import (1-9):${NC}"
 read -p "> " data_type
 
-# Yêu cầu người dùng nhập đường dẫn đến file
-echo -e "${YELLOW}Nhập đường dẫn đến file Excel (để trống để sử dụng file mặc định):${NC}"
-read -p "> " file_path
+# Yêu cầu người dùng nhập đường dẫn đến file hoặc URL
+echo -e "${YELLOW}Nhập đường dẫn đến file Excel hoặc URL (để trống để sử dụng file mặc định):${NC}"
+read -p "> " file_input
 
 # Xử lý loại dữ liệu và đường dẫn file
 case $data_type in
@@ -115,25 +153,36 @@ case $data_type in
         ;;
 esac
 
+# Biến để theo dõi nếu chúng ta sử dụng file tạm
+temp_file=""
+
 # Nếu người dùng không nhập đường dẫn, sử dụng file mặc định
-if [ -z "$file_path" ]; then
+if [ -z "$file_input" ]; then
     if [ $data_type -eq 9 ]; then
-        echo -e "${YELLOW}Vui lòng nhập đường dẫn đến file Excel cần kiểm tra:${NC}"
-        read -p "> " file_path
-        if [ -z "$file_path" ]; then
-            error "Bạn phải nhập đường dẫn đến file cho tính năng kiểm tra cấu trúc."
+        echo -e "${YELLOW}Vui lòng nhập đường dẫn đến file Excel hoặc URL cần kiểm tra:${NC}"
+        read -p "> " file_input
+        if [ -z "$file_input" ]; then
+            error "Bạn phải nhập đường dẫn đến file hoặc URL cho tính năng kiểm tra cấu trúc."
         fi
     else
-        file_path=$default_file
-        echo -e "Sử dụng file mặc định: ${BLUE}$file_path${NC}"
+        file_input=$default_file
+        echo -e "Sử dụng file mặc định: ${BLUE}$file_input${NC}"
     fi
 fi
 
-# Kiểm tra xem file có tồn tại không
-check_file "$file_path"
+# Xử lý file input, kiểm tra xem đó là URL hay đường dẫn local
+if is_url "$file_input"; then
+    # Nếu là URL, tải về file tạm
+    temp_file=$(download_file "$file_input")
+    file_path=$temp_file
+else
+    # Nếu là đường dẫn local, kiểm tra xem file có tồn tại không
+    file_path=$file_input
+    check_file "$file_path"
+fi
 
 # Hiển thị thông tin import
-echo -e "${YELLOW}Bắt đầu import dữ liệu ${BLUE}$data_name${YELLOW} từ file ${BLUE}$file_path${NC}"
+echo -e "${YELLOW}Bắt đầu import dữ liệu ${BLUE}$data_name${YELLOW} từ file ${BLUE}$file_input${NC}"
 
 # Thực hiện import
 if [ $data_type -eq 9 ]; then
@@ -162,6 +211,12 @@ else
     else
         error "Có lỗi xảy ra trong quá trình import dữ liệu."
     fi
+fi
+
+# Dọn dẹp file tạm nếu có
+if [ -n "$temp_file" ] && [ -f "$temp_file" ]; then
+    rm -f "$temp_file"
+    echo -e "Đã xóa file tạm thời."
 fi
 
 echo -e "${BLUE}=================================${NC}"
