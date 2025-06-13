@@ -144,6 +144,7 @@ async function importSelectedStocksFromExcel(filePath) {
 
         const selectedStockData = {
           symbol,
+          date: new Date(),
           close: parseFloatOrUndefined(row.close || row.Close || row['Giá'] || row['Giá CP'] || row['Giá đóng cửa']),
           return: parseFloatOrUndefined(row.return || row.Return || row['Lợi nhuận'] || row['LN']),
           volume: parseFloatOrUndefined(row.volume || row.Volume || row['KL'] || row['Khối lượng']),
