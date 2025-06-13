@@ -229,6 +229,12 @@ test_connection() {
   
   if [ $? -ne 0 ]; then
     echo -e "${RED}Không thể kết nối đến database. Vui lòng kiểm tra thông tin kết nối.${NC}"
+    echo -e "${YELLOW}Chi tiết lỗi có thể bao gồm:${NC}"
+    echo -e "  - Máy chủ PostgreSQL '${DB_HOST}' không hoạt động hoặc không thể truy cập"
+    echo -e "  - Port '${DB_PORT}' không chính xác hoặc bị chặn bởi firewall"
+    echo -e "  - Tên đăng nhập '${DB_USER}' hoặc mật khẩu không chính xác"
+    echo -e "  - Database '${DB_NAME}' không tồn tại"
+    echo -e "  - Quyền truy cập bị từ chối cho user '${DB_USER}'"
     return 1
   else
     echo -e "${GREEN}Kết nối đến database thành công.${NC}"
@@ -569,98 +575,6 @@ restore_single_table() {
   fi
 }
 
-# Import dữ liệu từ file CSV vào một bảng
-import_from_csv() {
-  local tables=()
-  while read -r table; do
-    if [ -n "$table" ]; then
-      tables+=("$table")
-    fi
-  done < <(get_tables)
-  
-  if [ ${#tables[@]} -eq 0 ]; then
-    echo -e "${RED}Không tìm thấy bảng nào trong database.${NC}"
-    return
-  fi
-  
-  echo -e "${BLUE}Chọn bảng để import dữ liệu vào:${NC}"
-  for i in "${!tables[@]}"; do
-    echo -e "$((i+1))) ${tables[i]}"
-  done
-  
-  read -p "Chọn bảng (1-${#tables[@]}): " choice
-  
-  if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt ${#tables[@]} ]; then
-    echo -e "${RED}Lựa chọn không hợp lệ${NC}"
-    return
-  fi
-  
-  local selected_table="${tables[$((choice-1))]}"
-  
-  read -ep "Nhập đường dẫn đầy đủ đến file CSV: " csv_file
-  
-  if [ ! -f "$csv_file" ]; then
-    echo -e "${RED}File CSV không tồn tại: ${csv_file}${NC}"
-    return
-  fi
-  
-  echo -e "${BLUE}Đang import dữ liệu từ ${csv_file} vào bảng ${selected_table}...${NC}"
-  # Sử dụng \copy từ psql. Yêu cầu file CSV có header khớp với tên cột.
-  PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d "$DB_NAME" -c "\copy \"${selected_table}\" FROM '${csv_file}' WITH (FORMAT csv, HEADER true);"
-  
-  if [ $? -eq 0 ]; then
-    echo -e "${GREEN}Import dữ liệu thành công.${NC}"
-    log_action "Imported data from '${csv_file}' to table '${selected_table}'"
-  else
-    echo -e "${RED}Import dữ liệu thất bại.${NC}"
-    log_action "Import from '${csv_file}' to table '${selected_table}' FAILED."
-  fi
-}
-
-# Export dữ liệu từ một bảng ra file CSV
-export_to_csv() {
-  local tables=()
-  while read -r table; do
-    if [ -n "$table" ]; then
-      tables+=("$table")
-    fi
-  done < <(get_tables)
-  
-  if [ ${#tables[@]} -eq 0 ]; then
-    echo -e "${RED}Không tìm thấy bảng nào trong database.${NC}"
-    return
-  fi
-  
-  echo -e "${BLUE}Chọn bảng để export dữ liệu:${NC}"
-  for i in "${!tables[@]}"; do
-    echo -e "$((i+1))) ${tables[i]}"
-  done
-  
-  read -p "Chọn bảng (1-${#tables[@]}): " choice
-  
-  if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt ${#tables[@]} ]; then
-    echo -e "${RED}Lựa chọn không hợp lệ${NC}"
-    return
-  fi
-  
-  local selected_table="${tables[$((choice-1))]}"
-  local output_dir="./exports"
-  mkdir -p "$output_dir"
-  local csv_file="${output_dir}/${selected_table}_$(date +"%Y%m%d_%H%M%S").csv"
-  
-  echo -e "${BLUE}Đang export dữ liệu từ bảng ${selected_table} ra file ${csv_file}...${NC}"
-  # Sử dụng \copy từ psql để export ra file với header
-  PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d "$DB_NAME" -c "\copy \"${selected_table}\" TO '${csv_file}' WITH (FORMAT csv, HEADER true);"
-  
-  if [ $? -eq 0 ]; then
-    echo -e "${GREEN}Export dữ liệu thành công. File lưu tại: ${csv_file}${NC}"
-    log_action "Exported data from table '${selected_table}' to file '${csv_file}'"
-  else
-    echo -e "${RED}Export dữ liệu thất bại.${NC}"
-    log_action "Export from table '${selected_table}' to file '${csv_file}' FAILED."
-  fi
-}
-
 # Kiểm tra trạng thái service PostgreSQL
 check_postgres_service() {
   echo -e "${BLUE}Đang kiểm tra trạng thái dịch vụ PostgreSQL...${NC}"
@@ -679,42 +593,6 @@ check_postgres_service() {
   fi
 }
 
-# Hướng dẫn cài đặt backup tự động (cron job)
-setup_cron_job() {
-  clear
-  display_logo
-  echo -e "${BLUE}=== HƯỚNG DẪN CÀI ĐẶT BACKUP TỰ ĐỘNG ===${NC}"
-  echo -e "Tính năng này sẽ hướng dẫn bạn tạo một cron job để tự động backup database."
-  echo -e "Script sẽ chạy ở chế độ không tương tác theo lịch bạn đặt."
-  echo -e "${YELLOW}Lưu ý: Bạn cần có quyền để chỉnh sửa crontab của user đang đăng nhập.${NC}"
-  echo ""
-  
-  echo -e "Đây là một vài ví dụ về cron expression:"
-  echo -e "  - ${GREEN}0 2 * * *${NC}       : Chạy vào 2:00 sáng mỗi ngày."
-  echo -e "  - ${GREEN}0 3 * * 0${NC}       : Chạy vào 3:00 sáng Chủ Nhật hàng tuần."
-  echo -e "  - ${GREEN}0 */6 * * *${NC}      : Chạy mỗi 6 tiếng."
-  
-  read -p "Nhập cron expression của bạn (ví dụ: '0 2 * * *'): " cron_expression
-  
-  # Lấy đường dẫn tuyệt đối của script đang chạy
-  local script_path
-  script_path=$(realpath "$0")
-  local script_dir
-  script_dir=$(dirname "$script_path")
-  
-  echo -e "\n${BLUE}Để cài đặt, hãy thêm dòng sau vào crontab của bạn:${NC}"
-  echo -e "1. Mở crontab editor bằng lệnh: ${YELLOW}crontab -e${NC}"
-  echo -e "2. Thêm dòng sau vào cuối file, sau đó lưu và thoát:"
-  echo -e "\n${GREEN}${cron_expression} cd ${script_dir} && ${script_path} auto_backup >> ${script_dir}/cron.log 2>&1${NC}\n"
-  
-  echo -e "Dòng trên sẽ:"
-  echo -e "  - Chuyển vào thư mục của script ('${script_dir}')."
-  echo -e "  - Chạy script này với đối số 'auto_backup' để thực hiện backup."
-  echo -e "  - Ghi log output của cron job vào file 'cron.log' trong cùng thư mục."
-}
-
-# --- MENU CHÍNH VÀ THỰC THI ---
-
 # Menu chính
 main_menu() {
   while true; do
@@ -729,14 +607,11 @@ main_menu() {
     echo -e "${YELLOW}3.${NC} Restore một bảng từ backup"
     echo -e "${YELLOW}4.${NC} Xóa database (Drop)"
     echo -e "${YELLOW}5.${NC} Xóa dữ liệu của bảng (Truncate)"
-    echo -e "${YELLOW}6.${NC} Import dữ liệu từ CSV"
-    echo -e "${YELLOW}7.${NC} Export dữ liệu ra CSV"
-    echo -e "${YELLOW}8.${NC} Xem thông tin database"
-    echo -e "${YELLOW}9.${NC} Kiểm tra trạng thái PostgreSQL"
-    echo -e "${YELLOW}10.${NC} Hướng dẫn cài đặt backup tự động"
+    echo -e "${YELLOW}6.${NC} Xem thông tin database"
+    echo -e "${YELLOW}7.${NC} Kiểm tra trạng thái PostgreSQL"
     echo -e "${YELLOW}0.${NC} Thoát"
     
-    read -p "Nhập lựa chọn của bạn (0-10): " choice
+    read -p "Nhập lựa chọn của bạn (0-7): " choice
     
     case $choice in
       1) backup_database ;;
@@ -744,11 +619,8 @@ main_menu() {
       3) restore_single_table ;;
       4) drop_database ;;
       5) truncate_tables ;;
-      6) import_from_csv ;;
-      7) export_to_csv ;;
-      8) show_database_info ;;
-      9) check_postgres_service ;;
-      10) setup_cron_job ;;
+      6) show_database_info ;;
+      7) check_postgres_service ;;
       0) echo -e "${GREEN}Cảm ơn đã sử dụng công cụ quản lý database!${NC}"; log_action "Exited tool."; exit 0 ;;
       *) echo -e "${RED}Lựa chọn không hợp lệ${NC}" ;;
     esac
@@ -760,12 +632,12 @@ main_menu() {
 
 # --- ĐIỂM BẮT ĐẦU THỰC THI SCRIPT ---
 
-# Xử lý đối số dòng lệnh cho các tác vụ không tương tác (ví dụ: cron)
+# Xử lý đối số dòng lệnh cho các tác vụ không tương tác
 if [ "$1" = "auto_backup" ]; then
   # Chuyển đến thư mục của script để các đường dẫn tương đối hoạt động đúng
   cd "$(dirname "$0")"
   
-  log_action "Cron job 'auto_backup' started."
+  log_action "Auto backup started."
   load_env
   if [ -n "$DB_NAME" ]; then
     backup_database
@@ -773,7 +645,7 @@ if [ "$1" = "auto_backup" ]; then
     log_action "AUTO_BACKUP FAILED: DB credentials not loaded from .env"
     echo "Lỗi: Không thể tải thông tin DB từ .env. Vui lòng kiểm tra file .env."
   fi
-  log_action "Cron job 'auto_backup' finished."
+  log_action "Auto backup finished."
   exit 0
 fi
 
@@ -787,7 +659,7 @@ if test_connection; then
   show_database_info > /dev/null
   main_menu
 else
-  echo -e "${RED}Không thể kết nối đến database. Vui lòng kiểm tra lại thông tin kết nối hoặc chạy lại script.${NC}"
+  echo -e "${RED}Kết nối đến database thất bại. Vui lòng kiểm tra lại cấu hình.${NC}"
   log_action "Connection test failed. Exiting."
   exit 1
 fi
