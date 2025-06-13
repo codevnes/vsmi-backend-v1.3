@@ -21,6 +21,35 @@ const { exec } = require('child_process');
 const filePath = process.argv[2] || path.join(process.cwd(), 'import', 'data-10-06', 'DM_CoPhieuChonLoc.xlsx');
 
 /**
+ * Parse a date value from Excel
+ * Excel dates can be stored as numbers representing days since 1/1/1900
+ */
+function parseDateFromExcel(value) {
+  if (!value) return new Date();
+  
+  // If it's already a Date object
+  if (value instanceof Date) return value;
+  
+  // Try to parse it as string date
+  if (typeof value === 'string') {
+    const parsedDate = new Date(value);
+    return isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+  }
+  
+  // If it's a number (Excel stores dates as days since 1/1/1900)
+  if (typeof value === 'number') {
+    // Excel date origin is 1/1/1900, but JavaScript uses 1/1/1970
+    // Excel has a leap year bug where it thinks 1900 was a leap year, so we adjust by 1
+    const excelEpoch = new Date(1900, 0, 0);
+    const adjustedValue = Math.floor(value);
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    return new Date(excelEpoch.getTime() + adjustedValue * millisecondsPerDay);
+  }
+  
+  return new Date();
+}
+
+/**
  * Parse a value to float or return undefined if invalid
  */
 function parseFloatOrUndefined(value) {
@@ -115,10 +144,13 @@ async function importSelectedStocksFromExcel(filePath) {
 
         const selectedStockData = {
           symbol,
+          date: new Date(), // Always use today's date since Excel doesn't have one
           close: parseFloatOrUndefined(row.close || row.Close || row['Giá'] || row['Giá CP'] || row['Giá đóng cửa']),
           return: parseFloatOrUndefined(row.return || row.Return || row['Lợi nhuận'] || row['LN']),
           volume: parseFloatOrUndefined(row.volume || row.Volume || row['KL'] || row['Khối lượng']),
         };
+        
+        console.log(`Stock data for ${symbol}:`, selectedStockData);
         
         // Check if the selected stock already exists
         const existingStock = await prisma.selectedStocks.findFirst({
